@@ -27,7 +27,7 @@ SOFTWARE.
 #ifdef MATLAB_MEX_FILE
 #include "tarjan.h"
 #else
-#include <opm/core/transport/reorder/tarjan.h>
+#include <opm/flowdiagnostics/reorder/tarjan.h>
 #endif
 
 
