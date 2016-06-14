@@ -26,16 +26,19 @@
 list (APPEND MAIN_SOURCE_FILES
 	opm/flowdiagnostics/CellSet.cpp
 	opm/flowdiagnostics/CellSetValues.cpp
+	opm/flowdiagnostics/ConnectionValues.cpp
 	opm/flowdiagnostics/reorder/tarjan.c
 	)
 
 list (APPEND TEST_SOURCE_FILES
 	tests/test_cellset.cpp
 	tests/test_cellsetvalues.cpp
+	tests/test_connectionvalues.cpp
 	tests/test_tarjan.cpp
 	)
 
 list (APPEND PUBLIC_HEADER_FILES
 	opm/flowdiagnostics/CellSet.hpp
 	opm/flowdiagnostics/CellSetValues.hpp
+	opm/flowdiagnostics/ConnectionValues.hpp
 	)
