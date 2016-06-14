@@ -186,7 +186,7 @@ Impl::solutionValues(const CellSetID&   i,
     auto p = soln.find(i);
 
     if (p == soln.end()) {
-        return {};
+        return CellSetValues{};
     }
 
     return p->second;
