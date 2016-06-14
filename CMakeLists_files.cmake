@@ -28,6 +28,7 @@ list (APPEND MAIN_SOURCE_FILES
 	opm/flowdiagnostics/CellSetValues.cpp
 	opm/flowdiagnostics/ConnectionValues.cpp
 	opm/flowdiagnostics/ConnectivityGraph.cpp
+	opm/flowdiagnostics/FlowDiagnosticsTool.cpp
 	opm/flowdiagnostics/reorder/tarjan.c
 	opm/flowdiagnostics/utility/RandomVector.cpp
 	)
@@ -37,6 +38,7 @@ list (APPEND TEST_SOURCE_FILES
 	tests/test_cellsetvalues.cpp
 	tests/test_connectionvalues.cpp
 	tests/test_connectivitygraph.cpp
+	tests/test_flowdiagnosticstool.cpp
 	tests/test_tarjan.cpp
 	)
 
@@ -45,5 +47,6 @@ list (APPEND PUBLIC_HEADER_FILES
 	opm/flowdiagnostics/CellSetValues.hpp
 	opm/flowdiagnostics/ConnectionValues.hpp
 	opm/flowdiagnostics/ConnectivityGraph.hpp
+	opm/flowdiagnostics/FlowDiagnosticsTool.hpp
 	opm/flowdiagnostics/utility/RandomVector.hpp
 	)
