@@ -22,44 +22,31 @@
 #                             files can of course include other files than these;
 #                             you should only add to this list if the *user* of
 #                             the library needs it.
-#
-# ATTIC_FILES           Unmaintained files. This for the projects developers
-#                       only. Don't expect these files to build.
 
-# originally generated with the command:
-# find opm -name '*.c*' -printf '\t%p\n' | sort
 list (APPEND MAIN_SOURCE_FILES
+	opm/flowdiagnostics/CellSet.cpp
+	opm/flowdiagnostics/CellSetValues.cpp
+	opm/flowdiagnostics/ConnectionValues.cpp
+	opm/flowdiagnostics/ConnectivityGraph.cpp
+	opm/flowdiagnostics/FlowDiagnosticsTool.cpp
 	opm/flowdiagnostics/reorder/tarjan.c
+	opm/flowdiagnostics/utility/RandomVector.cpp
 	)
 
-# originally generated with the command:
-# find tests -name '*.cpp' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
 list (APPEND TEST_SOURCE_FILES
+	tests/test_cellset.cpp
+	tests/test_cellsetvalues.cpp
+	tests/test_connectionvalues.cpp
+	tests/test_connectivitygraph.cpp
+	tests/test_flowdiagnosticstool.cpp
 	tests/test_tarjan.cpp
 	)
 
-# originally generated with the command:
-# find tests -name '*.xml' -a ! -wholename '*/not-unit/*' -printf '\t%p\n' | sort
-list (APPEND TEST_DATA_FILES
-	)
-
-# originally generated with the command:
-# find tutorials examples -name '*.c*' -printf '\t%p\n' | sort
-list (APPEND EXAMPLE_SOURCE_FILES
-	)
-
-# originally generated with the command:
-# find attic -name '*.c*' -printf '\t%p\n' | sort
-list (APPEND ATTIC_FILES
-	)
-
-# programs listed here will not only be compiled, but also marked for
-# installation
-list (APPEND PROGRAM_SOURCE_FILES
-	)
-
-# originally generated with the command:
-# find opm -name '*.h*' -a ! -name '*-pch.hpp' -printf '\t%p\n' | sort
 list (APPEND PUBLIC_HEADER_FILES
-	opm/flowdiagnostics/reorder/tarjan.h
+	opm/flowdiagnostics/CellSet.hpp
+	opm/flowdiagnostics/CellSetValues.hpp
+	opm/flowdiagnostics/ConnectionValues.hpp
+	opm/flowdiagnostics/ConnectivityGraph.hpp
+	opm/flowdiagnostics/FlowDiagnosticsTool.hpp
+	opm/flowdiagnostics/utility/RandomVector.hpp
 	)

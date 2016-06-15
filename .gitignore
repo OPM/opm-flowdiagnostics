@@ -1,3 +1,7 @@
+# Editor autosave files
+*~
+*.swp
+
 # Compiled Object files
 *.slo
 *.lo
@@ -26,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Mac OS X debug info
+*.dSYM
+
+# emacs directory setting:
+.dir-locals.el
