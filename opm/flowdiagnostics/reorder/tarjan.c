@@ -61,11 +61,7 @@ assign_int_vector(size_t n, const int val, int *v)
     for (i = 0; i < n; i++) { v[i] = val; }
 }
 
-static int
-min(int a, int b)
-{
-    return (a < b) ? a : b;
-}
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 /* Stack grows to lower addresses */
 #define peek(stack) (*((stack) + 1))
@@ -247,7 +243,7 @@ tarjan(int                     nv,
                 if (stack != work->stack) {
                     v = peek(stack);
 
-                    link[v] = min(link[v], link[c]);
+                    link[v] = MIN(link[v], link[c]);
                 }
             }
 
@@ -265,7 +261,7 @@ tarjan(int                     nv,
                     push(stack) = child;
                 }
                 else if (status[child] >= 0) {
-                    link[c] = min(link[c], time[child]);
+                    link[c] = MIN(link[c], time[child]);
                 }
                 else {
                     assert(status[child] == DONE);
