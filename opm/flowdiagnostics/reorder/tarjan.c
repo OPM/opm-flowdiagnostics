@@ -20,22 +20,98 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "config.h"
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif /* HAVE_CONFIG_H */
 
 #include <opm/flowdiagnostics/reorder/tarjan.h>
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdlib.h>
+
+enum VertexMark { DONE = -2, REMAINING = -1 };
+
+struct TarjanWorkSpace
+{
+    int nvert;
+
+    int *status;
+    int *link;
+    int *time;
+
+    int *stack;
+    int *cstack;
+};
 
 static void
-clear_vector(size_t n, int *v)
+initialise_stacks(int *comp, int *vert, struct TarjanWorkSpace *ws)
+{
+    assert (comp != vert);
+
+    ws->stack  = comp + (ws->nvert + 0);
+    ws->cstack = vert + (ws->nvert - 1);
+}
+
+static void
+assign_int_vector(size_t n, const int val, int *v)
 {
     size_t i;
 
-    for (i = 0; i < n; i++) { v[i] = 0; }
+    for (i = 0; i < n; i++) { v[i] = val; }
 }
 
-static int min(int a, int b){ return a < b? a : b;}
+static int
+min(int a, int b)
+{
+    return (a < b) ? a : b;
+}
+
+/* Stack grows to lower addresses */
+#define peek(stack) (*((stack) + 1))
+#define push(stack) *(stack)--
+
+/* ======================================================================
+ * Public interface below separator
+ * ====================================================================== */
+
+struct TarjanWorkSpace *
+create_tarjan_workspace(const int nvert)
+{
+    struct TarjanWorkSpace *ws, ws0 = { 0 };
+
+    ws = malloc(1 * sizeof *ws);
+
+    if (ws != NULL) {
+        *ws = ws0;
+
+        ws->status = malloc(3 * nvert * sizeof *ws->status);
+
+        if (ws->status == NULL) {
+            destroy_tarjan_workspace(ws);
+
+            ws = NULL;
+        }
+        else {
+            ws->nvert = nvert;
+
+            ws->link = ws->status + ws->nvert;
+            ws->time = ws->link   + ws->nvert;
+        }
+    }
+
+    return ws;
+}
+
+void
+destroy_tarjan_workspace(struct TarjanWorkSpace *ws)
+{
+    if (ws != NULL) {
+        free(ws->status);
+    }
+
+    free(ws);
+}
 
 /*
   Compute the strong components of directed graph G(edges, vertices),
@@ -63,88 +139,94 @@ static int min(int a, int b){ return a < b? a : b;}
 
 /*--------------------------------------------------------------------*/
 void
-tarjan (int nv, const int *ia, const int *ja, int *vert, int *comp,
-        int *ncomp, int *work)
+tarjan(int                     nv,
+       const int              *ia,
+       const int              *ja,
+       int                    *vert,
+       int                    *comp,
+       int                    *ncomp,
+       struct TarjanWorkSpace *work)
 /*--------------------------------------------------------------------*/
 {
-    /* Hint: end of VERT and COMP are used as stacks. */
+    int  c, v, seed, child, t, pos;
 
-    enum {DONE=-2, REMAINING=-1};
-    int  c, v, seed, child;
-    int  i;
+    /*
+     * Note: 'status' serves dual purpose during processing.
+     *
+     *   status[c] = DONE      -> Cell 'c' fully processed.
+     *               REMAINING -> Cell 'c' Undiscovered.
+     *               0         -> Cell 'c' not fully classified--there are
+     *                            no remaining descendants for this cell but
+     *                            we do not yet know if the cell is an SCC
+     *                            all by itself or if it is part of a larger
+     *                            component.
+     *
+     *   status[c] > 0 -> Cell 'c' has 'status[c]' remaining
+     *                    descendants (i.e., successors/children)
+     */
 
-    int *stack  = comp + nv;
-    int *bottom = stack;
-    int *cstack = vert + nv-1;
+    int *status = NULL;
+    int *link   = NULL;
+    int *time   = NULL;
+    int *stack  = NULL;
+    int *cstack = NULL;
 
-#if !defined(NDEBUG)
-    int *cbottom = cstack;
-#endif
-
-    int  t      = 0;
-    int  pos    = 0;
-
-    int *time   = work;
-    int *link   = time + nv;
-    int *status = link + nv; /* dual usage... */
-
-    clear_vector(3 * ((size_t) nv), work);
-    clear_vector(1 * ((size_t) nv), vert);
-    clear_vector(1 + ((size_t) nv), comp);
-
-    /* Init status all vertices */
-    for (i=0; i<nv; ++i)
-    {
-        status[i] = REMAINING;
+    if (nv != work->nvert) {
+        return;
     }
 
+    /* Hint: end of VERT and COMP are used as stacks. */
+
+    initialise_stacks(comp, vert, work);
+
+    stack  = work->stack;
+    cstack = work->cstack;
+
+    status = work->status;
+    link   = work->link;
+    time   = work->time;
+
+    /* Init status all vertices */
+    assign_int_vector(nv, REMAINING, status);
+
     *ncomp  = 0;
-    *comp++ = pos;
+    *comp++ = pos = 0;
 
     seed = 0;
     while (seed < nv)
     {
-        if (status[seed] == DONE)
-        {
+        if (status[seed] == DONE) {
             ++seed;
             continue;
         }
 
-        /* push seed */
-        *stack-- = seed;
+        push(stack) = seed;
 
         t = 0;
 
-        while ( stack != bottom )
+        while (stack != work->stack)
         {
-            /* peek c */
-            c = *(stack+1);
+            c = peek(stack);
 
             assert(status[c] != DONE);
             assert(status[c] >= -2);
 
-            if (status[c] == REMAINING)
-            {
+            if (status[c] == REMAINING) {
                 /* number of descendants of c */
-                status[c] = ia[c+1]-ia[c];
+                status[c] = ia[c + 1] - ia[c];
                 time[c]   = link[c] = t++;
 
-                /* push c on strongcomp stack */
-                *cstack-- = c;
+                push(cstack) = c;
             }
-
-
 
             /* if all descendants are processed */
             if (status[c] == 0)
             {
-
                 /* if c is root of strong component */
                 if (link[c] == time[c])
                 {
-                    do
-                    {
-                        assert (cstack != cbottom);
+                    do {
+                        assert (cstack != work->cstack);
 
                         /* pop strong component stack */
                         v         = *++cstack;
@@ -152,52 +234,46 @@ tarjan (int nv, const int *ia, const int *ja, int *vert, int *comp,
 
                         /* store vertex in VERT */
                         vert[pos++]  = v;
-                    }
-                    while ( v != c );
+                    } while (v != c);
 
                     /* store end point of component */
                     *comp++ = pos;
-                    ++*ncomp;
+                    *ncomp += 1;
                 }
 
                 /* pop c */
                 ++stack;
 
-                if (stack != bottom)
-                {
-                    link[*(stack+1)] = min(link[*(stack+1)], link[c]);
+                if (stack != work->stack) {
+                    v = peek(stack);
+
+                    link[v] = min(link[v], link[c]);
                 }
             }
 
-
-
             /* if there are more descendants to consider */
-            else
-            {
+            else {
                 assert(status[c] > 0);
 
-                child = ja[ia[c] + status[c]-1];
+                child = ja[ia[c] + (status[c] - 1)];
+
                 /* decrement descendant count of c*/
                 --status[c];
 
-                if (status[child] == REMAINING)
-                {
+                if (status[child] == REMAINING) {
                     /* push child */
-                    *stack-- = child;
-
+                    push(stack) = child;
                 }
-                else if (status[child] >= 0)
-                {
+                else if (status[child] >= 0) {
                     link[c] = min(link[c], time[child]);
-
                 }
-                else
-                {
+                else {
                     assert(status[child] == DONE);
                 }
             }
         }
-        assert (cstack == cbottom);
+
+        assert (cstack == work->cstack);
     }
 }
 

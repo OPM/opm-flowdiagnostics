@@ -38,6 +38,30 @@ SOFTWARE.
 extern "C" {
 #endif  /* __cplusplus */
 
+struct TarjanWorkSpace;
+
+/**
+ * Create work-space for Tarjan algorithm on graph with specified number of
+ * nodes (vertices).
+ *
+ * \param[in] nvert Number of graph vertices.
+ *
+ * \return Backing store for intermediate data created during SCC
+ * processing.  \c NULL in case of allocation failure.  Dispose of
+ * work-space using function destroy_tarjan_workspace().
+ */
+struct TarjanWorkSpace *
+create_tarjan_workspace(const int nvert);
+
+/**
+ * Dispose of backing store for intermediate SCC/Tarjan data.
+ *
+ * \param[in,out] ws Work-space structure procured in a previous call to
+ * function create_tarjan_workspace().  Invalid upon return.
+ */
+void
+destroy_tarjan_workspace(struct TarjanWorkSpace *ws);
+
 /**
  * Compute the strongly connected components of a directed graph,
  * \f$G(V,E)\f$.
@@ -53,19 +77,18 @@ extern "C" {
  *
  * \param[out] vert Permutation of vertices into topologically sorted
  *                  sequence of strong components (i.e., loops).
- *                  Array of size <CODE>nv</CODE>.
+ *                  Array of size \c nv.
  *
  * \param[out] comp Pointers to start of each strongly connected
  *                  component in vert, the i'th component has vertices
  *                  vert[comp[i]], ..., vert[comp[i+1] - 1].  Array of
- *                  size <CODE>nv + 1</CODE>.
+ *                  size \code nv + 1 \endcode.
  *
  * \param[out] ncomp Number of strong components.  Pointer to a single
- *                   <CODE>int</CODE>.
+ *                   \c int.
  *
- * \param[out] work Pointer to a scratch array represented as a block
- *                  of memory capable of holding <CODE>3 * nv</CODE>
- *                  elements of type <CODE>int</CODE>.
+ * \param[out] work Work-space obtained from the call \code
+ * create_tarjan_workspace(nv) \endcode.
  */
 void
 tarjan(int        nv   ,
@@ -74,7 +97,7 @@ tarjan(int        nv   ,
        int       *vert ,
        int       *comp ,
        int       *ncomp,
-       int       *work );
+       struct TarjanWorkSpace *ws);
 
 #ifdef __cplusplus
 }

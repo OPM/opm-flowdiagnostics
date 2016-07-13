@@ -32,6 +32,30 @@
 
 #include <opm/flowdiagnostics/reorder/tarjan.h>
 
+#include <memory>
+
+namespace {
+    struct DestroyWorkSpace
+    {
+        void operator()(TarjanWorkSpace* ws);
+    };
+
+    void DestroyWorkSpace::operator()(TarjanWorkSpace* ws)
+    {
+        destroy_tarjan_workspace(ws);
+    }
+
+    std::unique_ptr<TarjanWorkSpace, DestroyWorkSpace>
+    make_workspace(int nvert)
+    {
+        using WorkPtr =
+            std::unique_ptr<TarjanWorkSpace,
+                            DestroyWorkSpace>;
+
+        return WorkPtr{ create_tarjan_workspace(nvert) };
+    }
+} // Anonymous
+
 BOOST_AUTO_TEST_SUITE(Two_By_Two)
 
 // +-----+-----+
@@ -57,9 +81,10 @@ BOOST_AUTO_TEST_CASE (FullySeparable)
     int vert[1*nv + 0] = { 0 };
     int comp[1*nv + 1] = { 0 };
     int ncomp          =   0  ;
-    int work[3*nv + 0] = { 0 };
 
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work);
+    auto work = make_workspace(nv);
+
+    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
 
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
@@ -89,9 +114,10 @@ BOOST_AUTO_TEST_CASE (Loop)
     int vert[1*nv + 0] = { 0 };
     int comp[1*nv + 1] = { -1, -1, -1, -1, -1 };
     int ncomp          =   0  ;
-    int work[3*nv + 0] = { 0 };
 
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work);
+    auto work = make_workspace(nv);
+
+    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
 
     BOOST_CHECK_EQUAL(ncomp, 1);
 
@@ -125,9 +151,10 @@ BOOST_AUTO_TEST_CASE (DualPath)
     int vert[1*nv + 0] = { 0 };
     int comp[1*nv + 1] = { -1, -1, -1, -1, -1 };
     int ncomp          =   0  ;
-    int work[3*nv + 0] = { 0 };
 
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work);
+    auto work = make_workspace(nv);
+
+    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
 
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
@@ -159,9 +186,10 @@ BOOST_AUTO_TEST_CASE (IsolatedFlows)
     int vert[1*nv + 0] = { 0 };
     int comp[1*nv + 1] = { -1, -1, -1, -1, -1 };
     int ncomp          =   0  ;
-    int work[3*nv + 0] = { 0 };
 
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work);
+    auto work = make_workspace(nv);
+
+    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
 
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
