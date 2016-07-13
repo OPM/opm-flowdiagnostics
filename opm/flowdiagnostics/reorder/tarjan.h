@@ -34,11 +34,21 @@ SOFTWARE.
 #ifndef TARJAN_H_INCLUDED
 #define TARJAN_H_INCLUDED
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif  /* __cplusplus */
 
 struct TarjanWorkSpace;
+
+struct TarjanSCCResult;
+
+struct TarjanComponent
+{
+    size_t  size;
+    int    *vertex;
+};
 
 /**
  * Create work-space for Tarjan algorithm on graph with specified number of
@@ -61,6 +71,16 @@ create_tarjan_workspace(const int nvert);
  */
 void
 destroy_tarjan_workspace(struct TarjanWorkSpace *ws);
+
+void
+destroy_tarjan_sccresult(struct TarjanSCCResult *scc);
+
+size_t
+tarjan_get_numcomponents(const struct TarjanSCCResult *scc);
+
+struct TarjanComponent
+tarjan_get_strongcomponent(const struct TarjanSCCResult *scc,
+                           const size_t                  compID);
 
 /**
  * Compute the strongly connected components of a directed graph,
@@ -90,14 +110,10 @@ destroy_tarjan_workspace(struct TarjanWorkSpace *ws);
  * \param[out] work Work-space obtained from the call \code
  * create_tarjan_workspace(nv) \endcode.
  */
-void
-tarjan(int        nv   ,
-       const int *ia   ,
-       const int *ja   ,
-       int       *vert ,
-       int       *comp ,
-       int       *ncomp,
-       struct TarjanWorkSpace *ws);
+struct TarjanSCCResult *
+tarjan(const int  nv,
+       const int *ia,
+       const int *ja);
 
 #ifdef __cplusplus
 }

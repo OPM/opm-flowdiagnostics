@@ -40,20 +40,26 @@ namespace {
         void operator()(TarjanWorkSpace* ws);
     };
 
+    struct DestroySCCResult
+    {
+        void operator()(TarjanSCCResult *scc);
+    };
+
     void DestroyWorkSpace::operator()(TarjanWorkSpace* ws)
     {
         destroy_tarjan_workspace(ws);
     }
 
-    std::unique_ptr<TarjanWorkSpace, DestroyWorkSpace>
-    make_workspace(int nvert)
+    void DestroySCCResult::operator()(TarjanSCCResult* scc)
     {
-        using WorkPtr =
-            std::unique_ptr<TarjanWorkSpace,
-                            DestroyWorkSpace>;
-
-        return WorkPtr{ create_tarjan_workspace(nvert) };
+        destroy_tarjan_sccresult(scc);
     }
+
+    using WorkSpace =
+        std::unique_ptr<TarjanWorkSpace, DestroyWorkSpace>;
+
+    using SCCResult =
+        std::unique_ptr<TarjanSCCResult, DestroySCCResult>;
 } // Anonymous
 
 BOOST_AUTO_TEST_SUITE(Two_By_Two)
@@ -75,26 +81,23 @@ BOOST_AUTO_TEST_CASE (FullySeparable)
     const int ia[] = { 0, 0, 1, 2, 4 };
     const int ja[] = { 0, 0, 1, 2 };
 
-    const int nv           = (sizeof ia) / (sizeof ia[0]) - 1;
-    const int expect_ncomp = 4;
+    const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
+    const std::size_t expect_ncomp = 4;
 
-    int vert[1*nv + 0] = { 0 };
-    int comp[1*nv + 1] = { 0 };
-    int ncomp          =   0  ;
+    auto scc = SCCResult{ tarjan(nv, ia, ja) };
 
-    auto work = make_workspace(nv);
-
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
+    const auto ncomp = tarjan_get_numcomponents(scc.get());
 
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
     const int expect_vert[] = { 0, 1, 2, 3 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(vert       , vert        + nv,
-                                  expect_vert, expect_vert + nv);
 
-    const int expect_comp[expect_ncomp + 1] = { 0, 1, 2, 3, 4 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(comp       , comp        + ncomp + 1,
-                                  expect_comp, expect_comp + ncomp + 1);
+    for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
+        const auto c = tarjan_get_strongcomponent(scc.get(), comp);
+
+        BOOST_CHECK_EQUAL(c.size     , 1);
+        BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
+    }
 }
 
 BOOST_AUTO_TEST_CASE (Loop)
@@ -108,30 +111,26 @@ BOOST_AUTO_TEST_CASE (Loop)
     const int ia[] = { 0, 1, 2, 3, 4 };
     const int ja[] = { 2, 0, 3, 1 };
 
-    const int nv           = (sizeof ia) / (sizeof ia[0]) - 1;
-    const int expect_ncomp = 1;
+    const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
+    const std::size_t expect_ncomp = 1;
 
-    int vert[1*nv + 0] = { 0 };
-    int comp[1*nv + 1] = { -1, -1, -1, -1, -1 };
-    int ncomp          =   0  ;
+    auto scc = SCCResult{ tarjan(nv, ia, ja) };
 
-    auto work = make_workspace(nv);
+    const auto ncomp = tarjan_get_numcomponents(scc.get());
 
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
+    BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
-    BOOST_CHECK_EQUAL(ncomp, 1);
+    const auto c = tarjan_get_strongcomponent(scc.get(), 0);
+
+    BOOST_CHECK_EQUAL(c.size, nv);
 
     // Cell indices within component returned in (essentially) arbitrary
     // order.  This particular order happened to be correct at the time the
-    // test was implemented so the assertion on 'vert' is only usable as a
+    // test was implemented so the assertion on 'vertex' is only usable as a
     // regression test.
     const int expect_vert[] = { 1, 3, 2, 0 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(vert       , vert        + nv,
+    BOOST_CHECK_EQUAL_COLLECTIONS(c.vertex   , c.vertex + c.size,
                                   expect_vert, expect_vert + nv);
-
-    const int expect_comp[expect_ncomp + 1] = { 0, 4 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(comp       , comp        + ncomp + 1,
-                                  expect_comp, expect_comp + ncomp + 1);
 }
 
 BOOST_AUTO_TEST_CASE (DualPath)
@@ -145,16 +144,12 @@ BOOST_AUTO_TEST_CASE (DualPath)
     const int ia[] = { 0, 0, 2, 3, 4 };
     const int ja[] = { 0, 0, 3, 1 };
 
-    const int nv           = (sizeof ia) / (sizeof ia[0]) - 1;
-    const int expect_ncomp = 4;
+    const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
+    const std::size_t expect_ncomp = 4;
 
-    int vert[1*nv + 0] = { 0 };
-    int comp[1*nv + 1] = { -1, -1, -1, -1, -1 };
-    int ncomp          =   0  ;
+    auto scc = SCCResult{ tarjan(nv, ia, ja) };
 
-    auto work = make_workspace(nv);
-
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
+    const auto ncomp = tarjan_get_numcomponents(scc.get());
 
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
@@ -163,12 +158,13 @@ BOOST_AUTO_TEST_CASE (DualPath)
     // the flow path in which 1 precedes 3.
 
     const int expect_vert[] = { 0, 1, 3, 2 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(vert       , vert        + nv,
-                                  expect_vert, expect_vert + nv);
 
-    const int expect_comp[expect_ncomp + 1] = { 0, 1, 2, 3, 4 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(comp       , comp        + ncomp + 1,
-                                  expect_comp, expect_comp + ncomp + 1);
+    for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
+        const auto c = tarjan_get_strongcomponent(scc.get(), comp);
+
+        BOOST_CHECK_EQUAL(c.size     , 1);
+        BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
+    }
 }
 
 BOOST_AUTO_TEST_CASE (IsolatedFlows)
@@ -180,16 +176,12 @@ BOOST_AUTO_TEST_CASE (IsolatedFlows)
     const int ia[] = { 0, 0, 1, 2, 2 };
     const int ja[] = { 3, 0 };
 
-    const int nv           = (sizeof ia) / (sizeof ia[0]) - 1;
-    const int expect_ncomp = 4;
+    const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
+    const std::size_t expect_ncomp = 4;
 
-    int vert[1*nv + 0] = { 0 };
-    int comp[1*nv + 1] = { -1, -1, -1, -1, -1 };
-    int ncomp          =   0  ;
+    auto scc = SCCResult{ tarjan(nv, ia, ja) };
 
-    auto work = make_workspace(nv);
-
-    tarjan(nv, ia, ja, vert, comp, &ncomp, work.get());
+    const auto ncomp = tarjan_get_numcomponents(scc.get());
 
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
@@ -198,12 +190,13 @@ BOOST_AUTO_TEST_CASE (IsolatedFlows)
     // time the test was implemented so the assertion on 'vert' is only
     // usable as a regression test.
     const int expect_vert[] = { 0, 3, 1, 2 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(vert       , vert        + nv,
-                                  expect_vert, expect_vert + nv);
 
-    const int expect_comp[expect_ncomp + 1] = { 0, 1, 2, 3, 4 };
-    BOOST_CHECK_EQUAL_COLLECTIONS(comp       , comp        + ncomp + 1,
-                                  expect_comp, expect_comp + ncomp + 1);
+    for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
+        const auto c = tarjan_get_strongcomponent(scc.get(), comp);
+
+        BOOST_CHECK_EQUAL(c.size     , 1);
+        BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
