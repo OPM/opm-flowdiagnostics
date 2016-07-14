@@ -200,3 +200,131 @@ BOOST_AUTO_TEST_CASE (IsolatedFlows)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_AUTO_TEST_SUITE(Four_By_Four)
+
+// +-----+-----+-----+-----+
+// | 12  | 13  | 14  | 15  |
+// +-----+-----+-----+-----+
+// |  8  |  9  | 10  | 11  |
+// +-----+-----+-----+-----+
+// |  4  |  5  |  6  |  7  |
+// +-----+-----+-----+-----+
+// |  0  |  1  |  2  |  3  |
+// +-----+-----+-----+-----+
+
+BOOST_AUTO_TEST_CASE (CentreLoop)
+{
+    //  From -> To
+    //     0 -> [  1, 4 ],
+    //     1 -> [  2, 5 ],
+    //     2 -> [  3, 6 ],
+    //     3 -> [  7 ],
+    //     4 -> [  5, 8 ],
+    //     5 -> [  6 ],
+    //     6 -> [  7, 10 ],
+    //     7 -> [ 11 ],
+    //     8 -> [  9, 12 ],
+    //     9 -> [  5 ],
+    //    10 -> [  9, 11 ],
+    //    11 -> [ 15 ],
+    //    12 -> [ 13 ],
+    //    13 -> [  9, 14 ],
+    //    14 -> [ 10, 15 ],
+    //    15 -> Void (sink cell)
+
+    const int ia[] = {0, 2, 4, 6, 7, 9, 10, 12,
+                      13, 15, 16, 18, 19, 20, 22, 24, 24};
+    const int ja[] = {1, 4, 2, 5, 3, 6, 7, 5, 8, 6, 7, 10, 11,
+                      9, 12, 5, 9, 11, 15, 13, 9, 14, 10, 15};
+
+    const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
+    const std::size_t expect_ncomp = 13;
+
+    auto scc = SCCResult{ tarjan(nv, ia, ja) };
+
+    const auto ncomp = tarjan_get_numcomponents(scc.get());
+
+    BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
+
+    const std::size_t expect_size[] =
+        { 1, 1, 1, 4,      // 0 ..  3
+          1, 1, 1, 1,      // 4 ..  7
+          1, 1, 1, 1, 1 }; // 8 .. 12
+
+    const int expect_vert[] =
+        { 15, 11, 7,        // 0 ..  2
+          6, 5, 9, 10,      // 3
+          14, 13, 12, 8,    // 4 ..  7
+          4, 3, 2, 1, 0 };  // 8 .. 12
+
+    for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
+        const auto c = tarjan_get_strongcomponent(scc.get(), comp);
+
+        BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
+
+        for (auto i = 0*c.size; i < c.size; ++i, ++k) {
+            BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE (CentreLoopSource12)
+{
+    //  From -> To
+    //     0 -> [  1 ],
+    //     1 -> [  2 ],
+    //     2 -> [  3, 6 ],
+    //     3 -> [  7 ],
+    //     4 -> [  0, 5 ],
+    //     5 -> [  6 ],
+    //     6 -> [  7, 10 ],
+    //     7 -> [ 11 ],
+    //     8 -> [  4, 9 ],
+    //     9 -> [  5 ],
+    //    10 -> [  9, 11 ],
+    //    11 -> [ 15 ],
+    //    12 -> [  8, 13 ],
+    //    13 -> [ 14 ],
+    //    14 -> [ 10, 15 ],
+    //    15 -> Void (sink cell)
+
+    const int ia[] = {0, 1, 2, 4, 5, 7, 8, 10, 11,
+                      13, 14, 16, 17, 19, 20, 22, 22};
+
+    const int ja[] = {1, 2, 3, 6, 7, 0, 5, 6, 7, 10, 11,
+                      4, 9, 5, 9, 11, 15, 8, 13, 14, 10, 15};
+
+    const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
+    const std::size_t expect_ncomp = 13;
+
+    auto scc = SCCResult{ tarjan(nv, ia, ja) };
+
+    const auto ncomp = tarjan_get_numcomponents(scc.get());
+
+    BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
+
+    const std::size_t expect_size[] =
+        { 1, 1, 1, 4,      // 0 ..  3
+          1, 1, 1, 1,      // 4 ..  7
+          1, 1, 1, 1, 1 }; // 8 .. 12
+
+    const int expect_vert[] =
+        { 15, 11, 7,           // 0 ..  2
+          5, 9, 10, 6,         // 3
+          3, 2, 1, 0,          // 4 ..  7
+          4, 8, 14, 13, 12 };  // 8 .. 12
+
+    for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
+        const auto c = tarjan_get_strongcomponent(scc.get(), comp);
+
+        BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
+
+        for (auto i = 0*c.size; i < c.size; ++i, ++k) {
+            BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
+        }
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
