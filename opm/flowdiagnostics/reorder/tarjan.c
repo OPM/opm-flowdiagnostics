@@ -39,9 +39,6 @@ struct TarjanWorkSpace
     int *status;
     int *link;
     int *time;
-
-    size_t *stack;
-    int    *cstack;
 };
 
 struct TarjanSCCResult
@@ -49,13 +46,18 @@ struct TarjanSCCResult
     size_t  ncomp;
     size_t *start;
     int    *vert;
+
+    size_t *vstack, *vstart;
+    int    *cstack, *cstart;
 };
 
 static void
-initialise_stacks(size_t *comp, int *vert, struct TarjanWorkSpace *ws)
+initialise_stacks(const size_t nvert, struct TarjanSCCResult *scc)
 {
-    ws->stack  = comp + (ws->nvert + 0);
-    ws->cstack = vert + (ws->nvert - 1);
+    /* Vertex and component stacks grow from high end downwards */
+
+    scc->vstack = scc->vstart = scc->start + (nvert + 0);
+    scc->cstack = scc->cstart = scc->vert  + (nvert - 1);
 }
 
 static void
@@ -125,19 +127,13 @@ tarjan_global(const size_t            nv,
     int *time   = NULL;
 
     size_t *start  = NULL;
-    size_t *stack  = NULL;
-    int    *cstack = NULL;
 
     assert ((work != NULL) && "Work array must be non-NULL");
     assert ((scc  != NULL) && "Result array must be non-NULL");
 
-    /* Hint: end of VERT and START are used as stacks. */
-
-    initialise_stacks(scc->start, scc->vert, work);
+    initialise_stacks(work->nvert, scc);
 
     start  = scc->start;
-    stack  = work->stack;
-    cstack = work->cstack;
 
     status = work->status;
     link   = work->link;
@@ -157,13 +153,13 @@ tarjan_global(const size_t            nv,
             continue;
         }
 
-        push(stack) = seed;
+        push(scc->vstack) = seed;
 
         t = 0;
 
-        while (stack != work->stack)
+        while (scc->vstack != scc->vstart)
         {
-            c = peek(stack);
+            c = peek(scc->vstack);
 
             assert(status[c] != DONE);
             assert(status[c] >= -2);
@@ -173,7 +169,7 @@ tarjan_global(const size_t            nv,
                 status[c] = ia[c + 1] - ia[c];
                 time[c]   = link[c] = t++;
 
-                push(cstack) = (int) c;
+                push(scc->cstack) = (int) c;
             }
 
             /* if all descendants are processed */
@@ -183,10 +179,10 @@ tarjan_global(const size_t            nv,
                 if (link[c] == time[c])
                 {
                     do {
-                        assert (cstack != work->cstack);
+                        assert (scc->cstack != scc->cstart);
 
                         /* pop strong component stack */
-                        v = vertex = *++cstack;
+                        v = vertex = *++scc->cstack;
                         status[v]  = DONE;
 
                         /* store vertex in VERT */
@@ -199,10 +195,10 @@ tarjan_global(const size_t            nv,
                 }
 
                 /* pop c */
-                ++stack;
+                ++scc->vstack;
 
-                if (stack != work->stack) {
-                    v = peek(stack);
+                if (scc->vstack != scc->vstart) {
+                    v = peek(scc->vstack);
 
                     link[v] = MIN(link[v], link[c]);
                 }
@@ -219,7 +215,7 @@ tarjan_global(const size_t            nv,
 
                 if (status[child] == REMAINING) {
                     /* push child */
-                    push(stack) = child;
+                    push(scc->vstack) = child;
                 }
                 else if (status[child] >= 0) {
                     link[c] = MIN(link[c], time[child]);
@@ -230,7 +226,7 @@ tarjan_global(const size_t            nv,
             }
         }
 
-        assert (cstack == work->cstack);
+        assert (scc->cstack == scc->cstart);
     }
 }
 
