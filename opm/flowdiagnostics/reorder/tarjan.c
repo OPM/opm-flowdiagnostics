@@ -98,14 +98,46 @@ allocate_scc_result(const size_t nvert)
 #define push(stack) *(stack)--
 
 static void
+capture_scc(const size_t            c,
+            int                    *status,
+            struct TarjanSCCResult *scc)
+{
+    int    vertex;
+    size_t v;
+
+    /* Initialise strong component end pointer.
+     *
+     * Supports the equivalent of push_back() on the
+     * component. */
+    scc->start[ scc->ncomp + 1 ] =
+        scc->start[ scc->ncomp + 0 ];
+
+    do {
+        assert (scc->cstack != scc->cstart);
+
+        /* pop strong component stack */
+        v = vertex = *++scc->cstack;
+        status[v]  = DONE;
+
+        /* Capture component vertex in VERT while
+         * advancing component end pointer */
+        scc->vert[ scc->start[ scc->ncomp + 1 ] ++ ] = vertex;
+    } while (v != c);
+
+    /* Record completion of strong component.
+     * Prepare for next. */
+    scc->ncomp += 1;
+}
+
+static void
 tarjan_global(const size_t            nv,
               const int              *ia,
               const int              *ja,
               struct TarjanWorkSpace *work,
               struct TarjanSCCResult *scc)
 {
-    int    t, vertex;
-    size_t c, v, seed, child, pos;
+    int    t;
+    size_t c, v, seed, child;
 
     /*
      * Note: 'status' serves dual purpose during processing.
@@ -126,14 +158,10 @@ tarjan_global(const size_t            nv,
     int *link   = NULL;
     int *time   = NULL;
 
-    size_t *start  = NULL;
-
     assert ((work != NULL) && "Work array must be non-NULL");
     assert ((scc  != NULL) && "Result array must be non-NULL");
 
     initialise_stacks(work->nvert, scc);
-
-    start  = scc->start;
 
     status = work->status;
     link   = work->link;
@@ -142,8 +170,8 @@ tarjan_global(const size_t            nv,
     /* Init status all vertices */
     assign_int_vector(nv, REMAINING, status);
 
-    scc->ncomp = 0;
-    *start++   = pos = 0;
+    scc->ncomp                   = 0;
+    scc->start[ scc->ncomp + 0 ] = 0;
 
     seed = 0;
     while (seed < nv)
@@ -176,22 +204,8 @@ tarjan_global(const size_t            nv,
             if (status[c] == 0)
             {
                 /* if c is root of strong component */
-                if (link[c] == time[c])
-                {
-                    do {
-                        assert (scc->cstack != scc->cstart);
-
-                        /* pop strong component stack */
-                        v = vertex = *++scc->cstack;
-                        status[v]  = DONE;
-
-                        /* store vertex in VERT */
-                        scc->vert[pos++] = vertex;
-                    } while (v != c);
-
-                    /* store end point of component */
-                    *start++    = pos;
-                    scc->ncomp += 1;
+                if (link[c] == time[c]) {
+                    capture_scc(c, status, scc);
                 }
 
                 /* pop c */
