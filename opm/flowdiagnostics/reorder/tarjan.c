@@ -99,7 +99,7 @@ allocate_scc_result(const size_t nvert)
 
 static void
 capture_scc(const size_t            c,
-            int                    *status,
+            struct TarjanWorkSpace *work,
             struct TarjanSCCResult *scc)
 {
     int    vertex;
@@ -115,9 +115,9 @@ capture_scc(const size_t            c,
     do {
         assert (scc->cstack != scc->cstart);
 
-        /* pop strong component stack */
+        /* Pop strong component stack */
         v = vertex = *++scc->cstack;
-        status[v]  = DONE;
+        work->status[v] = DONE;
 
         /* Capture component vertex in VERT while
          * advancing component end pointer */
@@ -138,7 +138,7 @@ complete_dfs_from_vertex(const size_t            c,
 
     /* Record strong component if 'c' is root */
     if (work->link[c] == work->time[c]) {
-        capture_scc(c, work->status, scc);
+        capture_scc(c, work, scc);
     }
 
     /* Pop 'c' from DFS (vertex) stack */
