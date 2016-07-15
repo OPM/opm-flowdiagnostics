@@ -130,6 +130,70 @@ capture_scc(const size_t            c,
 }
 
 static void
+complete_dfs_from_vertex(const size_t            c,
+                         struct TarjanWorkSpace *work,
+                         struct TarjanSCCResult *scc)
+{
+    size_t v;
+
+    /* Record strong component if 'c' is root */
+    if (work->link[c] == work->time[c]) {
+        capture_scc(c, work->status, scc);
+    }
+
+    /* Pop 'c' from DFS (vertex) stack */
+    ++scc->vstack;
+
+    if (scc->vstack != scc->vstart) {
+        v = peek(scc->vstack);
+
+        work->link[v] = MIN(work->link[v], work->link[c]);
+    }
+}
+
+static void
+dfs_from_descendant(const size_t            c,
+                    const int              *ia,
+                    const int              *ja,
+                    struct TarjanWorkSpace *work,
+                    struct TarjanSCCResult *scc)
+{
+    size_t child;
+
+    assert (work->status[c] > 0);
+
+    child = ja[ia[c] + (work->status[c] - 1)];
+
+    /* decrement descendant count of c*/
+    --work->status[c];
+
+    if (work->status[child] == REMAINING) {
+        /* push child */
+        push(scc->vstack) = child;
+    }
+    else if (work->status[child] >= 0) {
+        work->link[c] = MIN(work->link[c], work->time[child]);
+    }
+    else {
+        assert (work->status[child] == DONE);
+    }
+}
+
+static void
+discover_vertex(const size_t            c,
+                const int              *ia,
+                int                    *time,
+                struct TarjanWorkSpace *work,
+                struct TarjanSCCResult *scc)
+{
+    /* number of descendants of c */
+    work->status[c] = ia[c + 1] - ia[c];
+    work->time[c]   = work->link[c] = (*time)++;
+
+    push(scc->cstack) = (int) c;
+}
+
+static void
 tarjan_global(const size_t            nv,
               const int              *ia,
               const int              *ja,
@@ -137,7 +201,7 @@ tarjan_global(const size_t            nv,
               struct TarjanSCCResult *scc)
 {
     int    t;
-    size_t c, v, seed, child;
+    size_t c, seed;
 
     /*
      * Note: 'status' serves dual purpose during processing.
@@ -155,8 +219,6 @@ tarjan_global(const size_t            nv,
      */
 
     int *status = NULL;
-    int *link   = NULL;
-    int *time   = NULL;
 
     assert ((work != NULL) && "Work array must be non-NULL");
     assert ((scc  != NULL) && "Result array must be non-NULL");
@@ -164,8 +226,6 @@ tarjan_global(const size_t            nv,
     initialise_stacks(work->nvert, scc);
 
     status = work->status;
-    link   = work->link;
-    time   = work->time;
 
     /* Init status all vertices */
     assign_int_vector(nv, REMAINING, status);
@@ -193,50 +253,18 @@ tarjan_global(const size_t            nv,
             assert(status[c] >= -2);
 
             if (status[c] == REMAINING) {
-                /* number of descendants of c */
-                status[c] = ia[c + 1] - ia[c];
-                time[c]   = link[c] = t++;
-
-                push(scc->cstack) = (int) c;
+                discover_vertex(c, ia, &t, work, scc);
             }
 
-            /* if all descendants are processed */
-            if (status[c] == 0)
-            {
-                /* if c is root of strong component */
-                if (link[c] == time[c]) {
-                    capture_scc(c, status, scc);
-                }
+            if (status[c] == 0) {
+                /* All descendants of 'c' processed */
 
-                /* pop c */
-                ++scc->vstack;
-
-                if (scc->vstack != scc->vstart) {
-                    v = peek(scc->vstack);
-
-                    link[v] = MIN(link[v], link[c]);
-                }
+                complete_dfs_from_vertex(c, work, scc);
             }
-
-            /* if there are more descendants to consider */
             else {
-                assert(status[c] > 0);
+                /* Process next descendant of 'c' */
 
-                child = ja[ia[c] + (status[c] - 1)];
-
-                /* decrement descendant count of c*/
-                --status[c];
-
-                if (status[child] == REMAINING) {
-                    /* push child */
-                    push(scc->vstack) = child;
-                }
-                else if (status[child] >= 0) {
-                    link[c] = MIN(link[c], time[child]);
-                }
-                else {
-                    assert(status[child] == DONE);
-                }
+                dfs_from_descendant(c, ia, ja, work, scc);
             }
         }
 
