@@ -194,14 +194,49 @@ discover_vertex(const size_t            c,
 }
 
 static void
+tarjan_local(const int              *ia,
+             const int              *ja,
+             struct TarjanWorkSpace *work,
+             struct TarjanSCCResult *scc)
+{
+    int    time;
+    size_t c;
+
+    time = 0;
+
+    while (scc->vstack != scc->vstart) {
+        c = peek(scc->vstack);
+
+        assert (work->status[c] != DONE);
+        assert (work->status[c] >= -2);
+
+        if (work->status[c] == REMAINING) {
+            discover_vertex(c, ia, &time, work, scc);
+        }
+
+        if (work->status[c] == 0) {
+            /* All descendants of 'c' processed */
+
+            complete_dfs_from_vertex(c, work, scc);
+        }
+        else {
+            /* Process next descendant of 'c' */
+
+            dfs_from_descendant(c, ia, ja, work, scc);
+        }
+    }
+
+    assert (scc->cstack == scc->cstart);
+}
+
+static void
 tarjan_global(const size_t            nv,
               const int              *ia,
               const int              *ja,
               struct TarjanWorkSpace *work,
               struct TarjanSCCResult *scc)
 {
-    int    t;
-    size_t c, seed;
+    size_t seed;
 
     /*
      * Note: 'status' serves dual purpose during processing.
@@ -218,17 +253,13 @@ tarjan_global(const size_t            nv,
      *                    descendants (i.e., successors/children)
      */
 
-    int *status = NULL;
-
     assert ((work != NULL) && "Work array must be non-NULL");
     assert ((scc  != NULL) && "Result array must be non-NULL");
 
     initialise_stacks(work->nvert, scc);
 
-    status = work->status;
-
     /* Init status all vertices */
-    assign_int_vector(nv, REMAINING, status);
+    assign_int_vector(nv, REMAINING, work->status);
 
     scc->ncomp                   = 0;
     scc->start[ scc->ncomp + 0 ] = 0;
@@ -236,39 +267,14 @@ tarjan_global(const size_t            nv,
     seed = 0;
     while (seed < nv)
     {
-        if (status[seed] == DONE) {
+        if (work->status[seed] == DONE) {
             ++seed;
             continue;
         }
 
         push(scc->vstack) = seed;
 
-        t = 0;
-
-        while (scc->vstack != scc->vstart)
-        {
-            c = peek(scc->vstack);
-
-            assert(status[c] != DONE);
-            assert(status[c] >= -2);
-
-            if (status[c] == REMAINING) {
-                discover_vertex(c, ia, &t, work, scc);
-            }
-
-            if (status[c] == 0) {
-                /* All descendants of 'c' processed */
-
-                complete_dfs_from_vertex(c, work, scc);
-            }
-            else {
-                /* Process next descendant of 'c' */
-
-                dfs_from_descendant(c, ia, ja, work, scc);
-            }
-        }
-
-        assert (scc->cstack == scc->cstart);
+        tarjan_local(ia, ja, work, scc);
     }
 }
 
