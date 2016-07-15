@@ -158,6 +158,32 @@ tarjan(const int  nv,
        const int *ia,
        const int *ja);
 
+/**
+ * Reverse order of SCCs represented by result set.
+ *
+ * Maintain order of vertices within each strong component.
+ *
+ * If successful, invalidates any TarjanComponent data held by caller.
+ *
+ * If unsuccessful, the original component order is maintained in the input
+ * argument.  In this case, the requested order can be obtained by
+ * traversing the linear component IDs in reverse using accessor function
+ * tarjan_get_strongcomponent().
+ *
+ * \param[in,out] scc On input, collection of strongly connected components
+ *                    obtained from a previous call to function tarjan().
+ *                    On output, reordered collection of SCCs such that
+ *                    linear access in ascending order of component IDs
+ *                    accesses the original strong components in reverse
+ *                    order.
+ *
+ * \return Whether or not the components could be reversed.  One (true) if
+ * order reversal successful and zero (false) otherwise--typically due to
+ * failure to allocate internal resources for operation.
+ */
+int
+tarjan_reverse_sccresult(struct TarjanSCCResult *scc);
+
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */

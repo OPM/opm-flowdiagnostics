@@ -29,6 +29,7 @@ SOFTWARE.
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 enum VertexMark { DONE = -2, REMAINING = -1 };
 
@@ -68,6 +69,24 @@ assign_int_vector(size_t n, const int val, int *v)
     for (i = 0; i < n; i++) { v[i] = val; }
 }
 
+static void
+copy_int_vector(const size_t n, const int* src, int *dst)
+{
+    size_t i, thres;
+
+    /* Cut-off point from thin air (i.e., no measurement) */
+    thres = (size_t) (1LU << 10);
+
+    if (n < thres) {
+        for (i = 0; i < n; i++) {
+            dst[i] = src[i];
+        }
+    }
+    else {
+        memcpy(dst, src, n * sizeof *dst);
+    }
+}
+
 static struct TarjanSCCResult *
 allocate_scc_result(const size_t nvert)
 {
@@ -92,6 +111,13 @@ allocate_scc_result(const size_t nvert)
 }
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
+#define SWAP(x,y,tmp)                           \
+    do {                                        \
+        (tmp) = (x);                            \
+        (x)   = (y);                            \
+        (y)   = (tmp);                          \
+    } while (0)
 
 /* Stack grows to lower addresses */
 #define peek(stack) (*((stack) + 1))
@@ -208,6 +234,13 @@ discover_vertex(const size_t            c,
  */
 
 static void
+tarjan_initialise_csr(struct TarjanSCCResult *scc)
+{
+    scc->ncomp                   = 0;
+    scc->start[ scc->ncomp + 0 ] = 0;
+}
+
+static void
 tarjan_initialise(struct TarjanWorkSpace *work,
                   struct TarjanSCCResult *scc)
 {
@@ -216,8 +249,7 @@ tarjan_initialise(struct TarjanWorkSpace *work,
     /* Initialise status for all vertices */
     assign_int_vector(work->nvert, REMAINING, work->status);
 
-    scc->ncomp                   = 0;
-    scc->start[ scc->ncomp + 0 ] = 0;
+    tarjan_initialise_csr(scc);
 }
 
 static void
@@ -295,6 +327,35 @@ tarjan_global(const int              *ia,
     {
         tarjan_local(start, ia, ja, work, scc);
     }
+}
+
+static void
+reverse_scc_core(const struct TarjanSCCResult *src,
+                 struct TarjanSCCResult       *dst)
+{
+    size_t comp, n;
+
+    tarjan_initialise_csr(dst);
+
+    for (comp = src->ncomp; comp > 0; --comp, ++dst->ncomp) {
+        n = src->start[ comp - 0 ] - src->start[ comp - 1 ];
+
+        dst->start[ dst->ncomp + 1 ] =
+            dst->start[ dst->ncomp + 0 ];
+
+        copy_int_vector(n, src->vert + src->start[ comp - 1 ],
+                        dst->vert + dst->start[ dst->ncomp + 1 ]);
+
+        dst->start[ dst->ncomp + 1 ] += n;
+    }
+}
+
+static void
+swap_scc(struct TarjanSCCResult *scc1,
+         struct TarjanSCCResult *scc2)
+{
+    SWAP(scc1->start, scc2->start, scc1->vstart);
+    SWAP(scc1->vert , scc2->vert , scc1->cstart);
 }
 
 /* ======================================================================
@@ -417,6 +478,28 @@ tarjan(const int  nv,
     destroy_tarjan_workspace(work);
 
     return scc;
+}
+
+int
+tarjan_reverse_sccresult(struct TarjanSCCResult *scc)
+{
+    int ok;
+
+    struct TarjanSCCResult *rev;
+
+    rev = allocate_scc_result(scc->start[ scc->ncomp ]);
+
+    ok  = rev != NULL;
+
+    if (ok) {
+        reverse_scc_core(scc, rev);
+
+        swap_scc(rev, scc);
+
+        destroy_tarjan_sccresult(rev);
+    }
+
+    return ok;
 }
 
 /* Local Variables:    */
