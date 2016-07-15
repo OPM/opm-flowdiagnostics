@@ -261,6 +261,21 @@ tarjan_local(const size_t            start,
     assert (scc->cstack == scc->cstart);
 }
 
+static size_t
+tarjan_find_start(const size_t                  seed,
+                  const struct TarjanWorkSpace *work)
+{
+    size_t start = seed;
+
+    while ((start < work->nvert) &&
+           (work->status[start] == DONE))
+    {
+        ++start;
+    }
+
+    return start;
+}
+
 static void
 tarjan_global(const size_t            nv,
               const int              *ia,
@@ -268,22 +283,18 @@ tarjan_global(const size_t            nv,
               struct TarjanWorkSpace *work,
               struct TarjanSCCResult *scc)
 {
-    size_t seed;
+    size_t start;
 
     assert ((work != NULL) && "Work array must be non-NULL");
     assert ((scc  != NULL) && "Result array must be non-NULL");
 
     tarjan_initialise(work, scc);
 
-    seed = 0;
-    while (seed < nv)
+    for (start = tarjan_find_start(  0  , work);
+         start < nv;
+         start = tarjan_find_start(start, work))
     {
-        if (work->status[seed] == DONE) {
-            ++seed;
-            continue;
-        }
-
-        tarjan_local(seed, ia, ja, work, scc);
+        tarjan_local(start, ia, ja, work, scc);
     }
 }
 
