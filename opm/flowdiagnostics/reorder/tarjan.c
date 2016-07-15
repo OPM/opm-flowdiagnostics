@@ -34,7 +34,7 @@ enum VertexMark { DONE = -2, REMAINING = -1 };
 
 struct TarjanWorkSpace
 {
-    int nvert;
+    size_t nvert;
 
     int *status;
     int *link;
@@ -193,6 +193,33 @@ discover_vertex(const size_t            c,
     push(scc->cstack) = (int) c;
 }
 
+/*
+ * Note: 'work->status' serves dual purpose during processing.
+ *
+ *   status[c] = DONE      -> Vertex 'c' fully processed.
+ *               REMAINING -> Vertex 'c' undiscovered.
+ *               0         -> Vertex 'c' not fully classified--there are no
+ *                            remaining descendants for this vertex but we
+ *                            do not yet know if the vertex is an SCC all of
+ *                            itself or if it is part of a larger component.
+ *
+ *   status[c] > 0 -> Vertex 'c' has 'status[c]' remaining
+ *                    descendants (i.e., successors/children).
+ */
+
+static void
+tarjan_initialise(struct TarjanWorkSpace *work,
+                  struct TarjanSCCResult *scc)
+{
+    initialise_stacks(work->nvert, scc);
+
+    /* Initialise status for all vertices */
+    assign_int_vector(work->nvert, REMAINING, work->status);
+
+    scc->ncomp                   = 0;
+    scc->start[ scc->ncomp + 0 ] = 0;
+}
+
 static void
 tarjan_local(const int              *ia,
              const int              *ja,
@@ -238,31 +265,10 @@ tarjan_global(const size_t            nv,
 {
     size_t seed;
 
-    /*
-     * Note: 'status' serves dual purpose during processing.
-     *
-     *   status[c] = DONE      -> Cell 'c' fully processed.
-     *               REMAINING -> Cell 'c' Undiscovered.
-     *               0         -> Cell 'c' not fully classified--there are
-     *                            no remaining descendants for this cell but
-     *                            we do not yet know if the cell is an SCC
-     *                            all by itself or if it is part of a larger
-     *                            component.
-     *
-     *   status[c] > 0 -> Cell 'c' has 'status[c]' remaining
-     *                    descendants (i.e., successors/children)
-     */
-
     assert ((work != NULL) && "Work array must be non-NULL");
     assert ((scc  != NULL) && "Result array must be non-NULL");
 
-    initialise_stacks(work->nvert, scc);
-
-    /* Init status all vertices */
-    assign_int_vector(nv, REMAINING, work->status);
-
-    scc->ncomp                   = 0;
-    scc->start[ scc->ncomp + 0 ] = 0;
+    tarjan_initialise(work, scc);
 
     seed = 0;
     while (seed < nv)
