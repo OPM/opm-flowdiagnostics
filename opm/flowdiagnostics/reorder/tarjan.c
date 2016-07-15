@@ -277,8 +277,7 @@ tarjan_find_start(const size_t                  seed,
 }
 
 static void
-tarjan_global(const size_t            nv,
-              const int              *ia,
+tarjan_global(const int              *ia,
               const int              *ja,
               struct TarjanWorkSpace *work,
               struct TarjanSCCResult *scc)
@@ -291,7 +290,7 @@ tarjan_global(const size_t            nv,
     tarjan_initialise(work, scc);
 
     for (start = tarjan_find_start(  0  , work);
-         start < nv;
+         start < work->nvert;
          start = tarjan_find_start(start, work))
     {
         tarjan_local(start, ia, ja, work, scc);
@@ -412,7 +411,7 @@ tarjan(const int  nv,
     }
 
     if (scc != NULL) {
-        tarjan_global(nv, ia, ja, work, scc);
+        tarjan_global(ia, ja, work, scc);
     }
 
     destroy_tarjan_workspace(work);
