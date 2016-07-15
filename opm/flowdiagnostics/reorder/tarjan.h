@@ -28,7 +28,7 @@ SOFTWARE.
  * Run-time complexity is \f$O(|V| + |E|)\f$.
  *
  * The implementation is based on
- * "http://en.wikipedia.org/wiki/Tarjan's_strongly_connected_components_algorithm".
+ * http://en.wikipedia.org/wiki/Tarjan's_strongly_connected_components_algorithm
  */
 
 #ifndef TARJAN_H_INCLUDED
@@ -40,14 +40,41 @@ SOFTWARE.
 extern "C" {
 #endif  /* __cplusplus */
 
+/**
+ * Abstract datatype providing backing store for working dataset in SCC
+ * processing.
+ *
+ * Intentionally incomplete.
+ */
 struct TarjanWorkSpace;
 
+/**
+ * Abstract datatype providing backing store for SCC result data.
+ *
+ * Intentionally incomplete.
+ */
 struct TarjanSCCResult;
 
+/**
+ * Contents of single strong component.
+ *
+ * Essentially a reference type.
+ */
 struct TarjanComponent
 {
+    /**
+     * Number of vertices in component.
+     */
     size_t  size;
-    int    *vertex;
+
+    /**
+     * IDs of vertices in strong component.  Non-owning pointer.  The
+     * vertices of this component are
+     * \code
+     *   vertex[0 .. size-1]
+     * \endcode
+     */
+    const int *vertex;
 };
 
 /**
@@ -72,12 +99,37 @@ create_tarjan_workspace(const int nvert);
 void
 destroy_tarjan_workspace(struct TarjanWorkSpace *ws);
 
+/**
+ * Dispose of backing store for SCC result data.
+ *
+ * \param[in,out] scc SCC result data from a previous call to function
+ * tarjan().  Invalid upon return.
+ */
 void
 destroy_tarjan_sccresult(struct TarjanSCCResult *scc);
 
+/**
+ * Retrieve number of strong components in result dataset.
+ *
+ * \param[in] scc Collection of strongly connected components obtained from
+ * a previous call to function tarjan().
+ *
+ * \return Number of strong components in result dataset.
+ */
 size_t
 tarjan_get_numcomponents(const struct TarjanSCCResult *scc);
 
+/**
+ * Get access to single strong component from SCC result dataset.
+ *
+ * \param[in] scc Collection of strongly connected components obtained from
+ * a previous call to function tarjan().
+ *
+ * \param[in] compID Linear ID of single strong component.  Must be in the
+ * range \code [0 .. tarjan_get_numcomponents(scc) - 1] \endcode.
+ *
+ * \return Single strong component corresponding to explicit linear ID.
+ */
 struct TarjanComponent
 tarjan_get_strongcomponent(const struct TarjanSCCResult *scc,
                            const size_t                  compID);
@@ -90,25 +142,16 @@ tarjan_get_strongcomponent(const struct TarjanSCCResult *scc,
  *
  * \param[in] nv Number of graph vertices.
  *
- * \param[in] ia
- * \param[in] ja adjacency matrix for directed graph in compressed sparse row
- *               format: vertex i has directed edges to vertices ja[ia[i]],
- *                ..., ja[ia[i+1]-1].
+ * \param[in] ia CSR sparse matrix start pointers corresponding to out-
  *
- * \param[out] vert Permutation of vertices into topologically sorted
- *                  sequence of strong components (i.e., loops).
- *                  Array of size \c nv.
+ * \param[in] ja CSR sparse matrix representation of out-neighbours in a
+ *               directed graph: vertex \c i has directed edges to vertices
+ *               \code ja[ia[i]], ..., ja[ia[i + 1] - 1] \endcode.
  *
- * \param[out] comp Pointers to start of each strongly connected
- *                  component in vert, the i'th component has vertices
- *                  vert[comp[i]], ..., vert[comp[i+1] - 1].  Array of
- *                  size \code nv + 1 \endcode.
- *
- * \param[out] ncomp Number of strong components.  Pointer to a single
- *                   \c int.
- *
- * \param[out] work Work-space obtained from the call \code
- * create_tarjan_workspace(nv) \endcode.
+ * \return Strong component result dataset.  Owning pointer.  Dispose of
+ * associate memory by calling the destructor destroy_tarjan_sccresult().
+ * Returns \c NULL in case of failure to allocate the result set or internal
+ * work-space.
  */
 struct TarjanSCCResult *
 tarjan(const int  nv,
