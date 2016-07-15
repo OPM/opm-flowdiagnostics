@@ -221,13 +221,16 @@ tarjan_initialise(struct TarjanWorkSpace *work,
 }
 
 static void
-tarjan_local(const int              *ia,
+tarjan_local(const size_t            start,
+             const int              *ia,
              const int              *ja,
              struct TarjanWorkSpace *work,
              struct TarjanSCCResult *scc)
 {
     int    time;
     size_t c;
+
+    push(scc->vstack) = start;
 
     time = 0;
 
@@ -238,6 +241,8 @@ tarjan_local(const int              *ia,
         assert (work->status[c] >= -2);
 
         if (work->status[c] == REMAINING) {
+            /* Discover() writes to work->status[c] */
+
             discover_vertex(c, ia, &time, work, scc);
         }
 
@@ -278,9 +283,7 @@ tarjan_global(const size_t            nv,
             continue;
         }
 
-        push(scc->vstack) = seed;
-
-        tarjan_local(ia, ja, work, scc);
+        tarjan_local(seed, ia, ja, work, scc);
     }
 }
 
