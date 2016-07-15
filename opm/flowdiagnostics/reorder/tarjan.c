@@ -34,21 +34,21 @@ enum VertexMark { DONE = -2, REMAINING = -1 };
 
 struct TarjanWorkSpace
 {
-    size_t nvert;
+    size_t nvert;               /**< Number of vertices */
 
-    int *status;
-    int *link;
-    int *time;
+    int *status;                /**< Vertex processing status */
+    int *link;                  /**< Vertex low-link */
+    int *time;                  /**< Vertex DFS discovery time */
 };
 
 struct TarjanSCCResult
 {
-    size_t  ncomp;
-    size_t *start;
-    int    *vert;
+    size_t  ncomp;              /**< Running number of SCCs */
+    size_t *start;              /**< SCC start pointers (CSR) */
+    int    *vert;               /**< SCC contents (CSR format) */
 
-    size_t *vstack, *vstart;
-    int    *cstack, *cstart;
+    size_t *vstack, *vstart;    /**< Vertex stack (reuse 'start') */
+    int    *cstack, *cstart;    /**< Component stack (reuse 'vert') */
 };
 
 static void
