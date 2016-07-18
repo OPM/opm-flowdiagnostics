@@ -60,6 +60,23 @@ namespace {
 
     using SCCResult =
         std::unique_ptr<TarjanSCCResult, DestroySCCResult>;
+
+    void check_scc(const std::size_t*     expect_size,
+                   const int*             expect_vert,
+                   const TarjanSCCResult* scc)
+    {
+        const auto ncomp = tarjan_get_numcomponents(scc);
+
+        for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
+            const auto c = tarjan_get_strongcomponent(scc, comp);
+
+            BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
+
+            for (auto i = 0*c.size; i < c.size; ++i, ++k) {
+                BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
+            }
+        }
+    }
 } // Anonymous
 
 BOOST_AUTO_TEST_SUITE(Two_By_Two)
@@ -91,25 +108,17 @@ BOOST_AUTO_TEST_CASE (FullySeparable)
     BOOST_CHECK_EQUAL(ncomp, expect_ncomp);
 
     {
-        const int expect_vert[] = { 0, 1, 2, 3 };
+        const std::size_t expect_size[] = { 1, 1, 1, 1 };
+        const int         expect_vert[] = { 0, 1, 2, 3 };
 
-        for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size     , 1);
-            BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 
     if (tarjan_reverse_sccresult(scc.get())) {
-        const int expect_vert[] = { 3, 2, 1, 0 };
+        const std::size_t expect_size[] = { 1, 1, 1, 1 };
+        const int         expect_vert[] = { 3, 2, 1, 0 };
 
-        for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size     , 1);
-            BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 }
 
@@ -138,28 +147,20 @@ BOOST_AUTO_TEST_CASE (Loop)
     // test was implemented so the assertion on 'vertex' is only usable as a
     // regression test.
     {
-        const auto c = tarjan_get_strongcomponent(scc.get(), 0);
+        const std::size_t expect_size[] = { nv };
+        const int         expect_vert[] = { 1, 3, 2, 0 };
 
-        BOOST_CHECK_EQUAL(c.size, nv);
-
-        const int expect_vert[] = { 1, 3, 2, 0 };
-
-        BOOST_CHECK_EQUAL_COLLECTIONS(c.vertex   , c.vertex + c.size,
-                                      expect_vert, expect_vert + nv);
+        check_scc(expect_size, expect_vert, scc.get());
     }
 
     if (tarjan_reverse_sccresult(scc.get())) {
         // Reversing order of components maintains internal order of
         // vertices within each component.
-        //
-        const auto c = tarjan_get_strongcomponent(scc.get(), 0);
 
-        BOOST_CHECK_EQUAL(c.size, nv);
+        const std::size_t expect_size[] = { nv };
+        const int         expect_vert[] = { 1, 3, 2, 0 };
 
-        const int expect_vert[] = { 1, 3, 2, 0 };
-
-        BOOST_CHECK_EQUAL_COLLECTIONS(c.vertex   , c.vertex + c.size,
-                                      expect_vert, expect_vert + nv);
+        check_scc(expect_size, expect_vert, scc.get());
     }
 }
 
@@ -188,25 +189,17 @@ BOOST_AUTO_TEST_CASE (DualPath)
     // the flow path in which 1 precedes 3.
 
     {
-        const int expect_vert[] = { 0, 1, 3, 2 };
+        const std::size_t expect_size[] = { 1, 1, 1, 1 };
+        const int         expect_vert[] = { 0, 1, 3, 2 };
 
-        for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size     , 1);
-            BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 
     if (tarjan_reverse_sccresult(scc.get())) {
-        const int expect_vert[] = { 2, 3, 1, 0 };
+        const std::size_t expect_size[] = { 1, 1, 1, 1 };
+        const int         expect_vert[] = { 2, 3, 1, 0 };
 
-        for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size     , 1);
-            BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 }
 
@@ -234,25 +227,17 @@ BOOST_AUTO_TEST_CASE (IsolatedFlows)
     // usable as a regression test.
 
     {
-        const int expect_vert[] = { 0, 3, 1, 2 };
+        const std::size_t expect_size[] = { 1, 1, 1, 1 };
+        const int         expect_vert[] = { 0, 3, 1, 2 };
 
-        for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size     , 1);
-            BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 
     if (tarjan_reverse_sccresult(scc.get())) {
-        const int expect_vert[] = { 2, 1, 3, 0 };
+        const std::size_t expect_size[] = { 1, 1, 1, 1 };
+        const int         expect_vert[] = { 2, 1, 3, 0 };
 
-        for (auto comp = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size     , 1);
-            BOOST_CHECK_EQUAL(c.vertex[0], expect_vert[comp]);
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 }
 
@@ -317,15 +302,7 @@ BOOST_AUTO_TEST_CASE (CentreLoop)
               14, 13, 12, 8,    // 4 ..  7
               4, 3, 2, 1, 0 };  // 8 .. 12
 
-        for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
-
-            for (auto i = 0*c.size; i < c.size; ++i, ++k) {
-                BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
-            }
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 
     if (tarjan_reverse_sccresult(scc.get())) {
@@ -340,15 +317,7 @@ BOOST_AUTO_TEST_CASE (CentreLoop)
               6, 5, 9, 10,   //  9
               7, 11, 15 };   // 10 .. 12
 
-        for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
-
-            for (auto i = 0*c.size; i < c.size; ++i, ++k) {
-                BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
-            }
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 }
 
@@ -399,15 +368,7 @@ BOOST_AUTO_TEST_CASE (CentreLoopSource12)
               3, 2, 1, 0,          // 4 ..  7
               4, 8, 14, 13, 12 };  // 8 .. 12
 
-        for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
-
-            for (auto i = 0*c.size; i < c.size; ++i, ++k) {
-                BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
-            }
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 
     if (tarjan_reverse_sccresult(scc.get())) {
@@ -422,15 +383,7 @@ BOOST_AUTO_TEST_CASE (CentreLoopSource12)
               5, 9, 10, 6,      //  9
               7, 11, 15 };      // 10 .. 12
 
-        for (auto comp = 0*ncomp, k = 0*ncomp; comp < ncomp; ++comp) {
-            const auto c = tarjan_get_strongcomponent(scc.get(), comp);
-
-            BOOST_CHECK_EQUAL(c.size, expect_size[comp]);
-
-            for (auto i = 0*c.size; i < c.size; ++i, ++k) {
-                BOOST_CHECK_EQUAL(c.vertex[i], expect_vert[k]);
-            }
-        }
+        check_scc(expect_size, expect_vert, scc.get());
     }
 }
 
