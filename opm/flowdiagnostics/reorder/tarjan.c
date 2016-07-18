@@ -480,6 +480,45 @@ tarjan(const int  nv,
     return scc;
 }
 
+struct TarjanSCCResult *
+tarjan_reachable_sccs(const size_t            nv,
+                      const int              *ia,
+                      const int              *ja,
+                      const size_t            nstart,
+                      const int              *start_pts,
+                      struct TarjanWorkSpace *work)
+{
+    size_t                  i, start;
+    struct TarjanSCCResult *scc;
+
+    assert ((work != NULL) && "Work-space must be non-NULL");
+    assert ((work->nvert >= nv) &&
+            "Work-space must be large enough to accommodate graph");
+
+#if defined(NDEBUG)
+    /* Suppress 'unused argument' diagnostic ('nv' only in assert()) */
+    (void) nv;
+#endif  /* defined(NDEBUG) */
+
+    scc = allocate_scc_result(work->nvert);
+
+    if (scc != NULL) {
+        tarjan_initialise(work, scc);
+
+        for (i = 0; i < nstart; i++) {
+            start = start_pts[i];
+
+            if (work->status[start] == DONE) {
+                continue;
+            }
+
+            tarjan_local(start, ia, ja, work, scc);
+        }
+    }
+
+    return scc;
+}
+
 int
 tarjan_reverse_sccresult(struct TarjanSCCResult *scc)
 {

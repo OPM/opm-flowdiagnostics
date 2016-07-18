@@ -103,7 +103,7 @@ destroy_tarjan_workspace(struct TarjanWorkSpace *ws);
  * Dispose of backing store for SCC result data.
  *
  * \param[in,out] scc SCC result data from a previous call to function
- * tarjan().  Invalid upon return.
+ * tarjan() or tarjan_reachable_sccs().  Invalid upon return.
  */
 void
 destroy_tarjan_sccresult(struct TarjanSCCResult *scc);
@@ -112,7 +112,7 @@ destroy_tarjan_sccresult(struct TarjanSCCResult *scc);
  * Retrieve number of strong components in result dataset.
  *
  * \param[in] scc Collection of strongly connected components obtained from
- * a previous call to function tarjan().
+ * a previous call to function tarjan() or tarjan_reachable_sccs().
  *
  * \return Number of strong components in result dataset.
  */
@@ -123,7 +123,7 @@ tarjan_get_numcomponents(const struct TarjanSCCResult *scc);
  * Get access to single strong component from SCC result dataset.
  *
  * \param[in] scc Collection of strongly connected components obtained from
- * a previous call to function tarjan().
+ * a previous call to function tarjan() or tarjan_reachable_sccs().
  *
  * \param[in] compID Linear ID of single strong component.  Must be in the
  * range \code [0 .. tarjan_get_numcomponents(scc) - 1] \endcode.
@@ -142,7 +142,8 @@ tarjan_get_strongcomponent(const struct TarjanSCCResult *scc,
  *
  * \param[in] nv Number of graph vertices.
  *
- * \param[in] ia CSR sparse matrix start pointers corresponding to out-
+ * \param[in] ia CSR sparse matrix start pointers corresponding to
+ *               downstream vertices.
  *
  * \param[in] ja CSR sparse matrix representation of out-neighbours in a
  *               directed graph: vertex \c i has directed edges to vertices
@@ -159,6 +160,45 @@ tarjan(const int  nv,
        const int *ja);
 
 /**
+ * Compute the strongly connected components of reachable set in a directed
+ * graph \f$G(V,E)\$ when starting from a sparse collection of start points.
+ *
+ * The components are returned in reverse topological order.  Use function
+ * tarjan_reverse_sccresult() to access components in topological order.
+ *
+ * \param[in] nv Number of graph vertices.
+ *
+ * \param[in] ia CSR sparse matrix start pointers corresponding to
+ *               downstream vertices.
+ *
+ * \param[in] ja CSR sparse matrix representation of out-neighbours in a
+ *               directed graph: vertex \c i has directed edges to vertices
+ *               \code ja[ia[i]], ..., ja[ia[i + 1] - 1] \endcode.
+ *
+ * \param[in] nstart Number of start points from which to initiate reachable
+ *               set calculations.
+ *
+ * \param[in] start_pts Vertices from which to initiate reachable set
+ *               calculations.  Array of size \p nstart.
+ *
+ * \param[in,out] ws Backing-store for quantities needed during SCC
+ *               processing.  Obtained from a previous call to function
+ *               create_tarjan_workspace().
+ *
+ * \return Strong component result dataset.  Owning pointer.  Dispose of
+ * associate memory by calling the destructor destroy_tarjan_sccresult().
+ * Returns \c NULL in case of failure to allocate the result set or internal
+ * work-space.
+ */
+struct TarjanSCCResult *
+tarjan_reachable_sccs(const size_t            nv,
+                      const int              *ia,
+                      const int              *ja,
+                      const size_t            nstart,
+                      const int              *start_pts,
+                      struct TarjanWorkSpace *ws);
+
+/**
  * Reverse order of SCCs represented by result set.
  *
  * Maintain order of vertices within each strong component.
@@ -171,11 +211,11 @@ tarjan(const int  nv,
  * tarjan_get_strongcomponent().
  *
  * \param[in,out] scc On input, collection of strongly connected components
- *                    obtained from a previous call to function tarjan().
- *                    On output, reordered collection of SCCs such that
- *                    linear access in ascending order of component IDs
- *                    accesses the original strong components in reverse
- *                    order.
+ *                    obtained from a previous call to function tarjan() or
+ *                    function tarjan_reachable_sccs().  On output,
+ *                    reordered collection of SCCs such that linear access
+ *                    in ascending order of component IDs accesses the
+ *                    original strong components in reverse order.
  *
  * \return Whether or not the components could be reversed.  One (true) if
  * order reversal successful and zero (false) otherwise--typically due to
