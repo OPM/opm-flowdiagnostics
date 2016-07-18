@@ -88,7 +88,7 @@ struct TarjanComponent
  * work-space using function destroy_tarjan_workspace().
  */
 struct TarjanWorkSpace *
-create_tarjan_workspace(const int nvert);
+create_tarjan_workspace(const size_t nvert);
 
 /**
  * Dispose of backing store for intermediate SCC/Tarjan data.
@@ -155,9 +155,9 @@ tarjan_get_strongcomponent(const struct TarjanSCCResult *scc,
  * work-space.
  */
 struct TarjanSCCResult *
-tarjan(const int  nv,
-       const int *ia,
-       const int *ja);
+tarjan(const size_t  nv,
+       const size_t *ia,
+       const int    *ja);
 
 /**
  * Compute the strongly connected components of reachable set in a directed
@@ -192,7 +192,7 @@ tarjan(const int  nv,
  */
 struct TarjanSCCResult *
 tarjan_reachable_sccs(const size_t            nv,
-                      const int              *ia,
+                      const size_t           *ia,
                       const int              *ja,
                       const size_t            nstart,
                       const int              *start_pts,

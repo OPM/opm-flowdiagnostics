@@ -97,8 +97,8 @@ BOOST_AUTO_TEST_CASE (FullySeparable)
     //
     // Note: (ia,ja) is INFLOW graph whence tarjan() returns SCCs in
     // topological order from sources to sinks.
-    const int ia[] = { 0, 0, 1, 2, 4 };
-    const int ja[] = { 0, 0, 1, 2 };
+    const std::size_t ia[] = { 0, 0, 1, 2, 4 };
+    const int         ja[] = { 0, 0, 1, 2 };
 
     const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
     const std::size_t expect_ncomp = 4;
@@ -134,8 +134,8 @@ BOOST_AUTO_TEST_CASE (FullySeparableSparse)
     //
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
-    const int ia[] = { 0, 2, 3, 4, 4 };
-    const int ja[] = { 1, 2, 3, 3 };
+    const std::size_t ia[] = { 0, 2, 3, 4, 4 };
+    const int         ja[] = { 1, 2, 3, 3 };
 
     const int         start_pts[] = { 2 };
     const std::size_t nv          = (sizeof ia) / (sizeof ia[0]) - 1;
@@ -175,8 +175,8 @@ BOOST_AUTO_TEST_CASE (Loop)
     //
     // Note: (ia,ja) is INFLOW graph whence tarjan() returns SCCs in
     // topological order from sources to sinks.
-    const int ia[] = { 0, 1, 2, 3, 4 };
-    const int ja[] = { 2, 0, 3, 1 };
+    const std::size_t ia[] = { 0, 1, 2, 3, 4 };
+    const int         ja[] = { 2, 0, 3, 1 };
 
     const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
     const std::size_t expect_ncomp = 1;
@@ -219,8 +219,8 @@ BOOST_AUTO_TEST_CASE (LoopSparse)
     //
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
-    const int ia[] = { 0, 1, 2, 3, 4 };
-    const int ja[] = { 1, 3, 0, 2 };
+    const std::size_t ia[] = { 0, 1, 2, 3, 4 };
+    const int         ja[] = { 1, 3, 0, 2 };
 
     const int         start_pts[] = { 2 };
     const std::size_t nv          = (sizeof ia) / (sizeof ia[0]) - 1;
@@ -266,8 +266,8 @@ BOOST_AUTO_TEST_CASE (DualPath)
     //
     // Note: (ia,ja) is INFLOW graph whence tarjan() returns SCCs in
     // topological order from sources to sinks.
-    const int ia[] = { 0, 0, 2, 3, 4 };
-    const int ja[] = { 0, 0, 3, 1 };
+    const std::size_t ia[] = { 0, 0, 2, 3, 4 };
+    const int         ja[] = { 0, 0, 3, 1 };
 
     const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
     const std::size_t expect_ncomp = 4;
@@ -307,8 +307,8 @@ BOOST_AUTO_TEST_CASE (DualPathSparse)
     //
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
-    const int ia[] = { 0, 2, 3, 3, 4 };
-    const int ja[] = { 1, 2, 3, 2 };
+    const std::size_t ia[] = { 0, 2, 3, 3, 4 };
+    const int         ja[] = { 1, 2, 3, 2 };
 
     const int         start_pts[] = { 1 };
     const std::size_t nv          = (sizeof ia) / (sizeof ia[0]) - 1;
@@ -349,8 +349,8 @@ BOOST_AUTO_TEST_CASE (IsolatedFlows)
     //
     // Note: (ia,ja) is INFLOW graph whence tarjan() returns SCCs in
     // topological order from sources to sinks.
-    const int ia[] = { 0, 0, 1, 2, 2 };
-    const int ja[] = { 3, 0 };
+    const std::size_t ia[] = { 0, 0, 1, 2, 2 };
+    const int         ja[] = { 3, 0 };
 
     const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
     const std::size_t expect_ncomp = 4;
@@ -389,8 +389,8 @@ BOOST_AUTO_TEST_CASE (IsolatedFlowsSparse)
     //
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
-    const int ia[] = { 0, 1, 1, 1, 2 };
-    const int ja[] = { 2, 1 };
+    const std::size_t ia[] = { 0, 1, 1, 1, 2 };
+    const int         ja[] = { 2, 1 };
 
     const int         start_pts[] = { 3 };
     const std::size_t nv          = (sizeof ia) / (sizeof ia[0]) - 1;
@@ -461,10 +461,10 @@ BOOST_AUTO_TEST_CASE (CentreLoop)
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
 
-    const int ia[] = {0, 2, 4, 6, 7, 9, 10, 12,
-                      13, 15, 16, 18, 19, 20, 22, 24, 24};
-    const int ja[] = {1, 4, 2, 5, 3, 6, 7, 5, 8, 6, 7, 10, 11,
-                      9, 12, 5, 9, 11, 15, 13, 9, 14, 10, 15};
+    const std::size_t ia[] = {0, 2, 4, 6, 7, 9, 10, 12,
+                              13, 15, 16, 18, 19, 20, 22, 24, 24};
+    const int         ja[] = {1, 4, 2, 5, 3, 6, 7, 5, 8, 6, 7, 10, 11,
+                              9, 12, 5, 9, 11, 15, 13, 9, 14, 10, 15};
 
     const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
     const std::size_t expect_ncomp = 13;
@@ -529,10 +529,10 @@ BOOST_AUTO_TEST_CASE (CentreLoopSparse)
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
 
-    const int ia[] = {0, 2, 4, 6, 7, 9, 10, 12,
-                      13, 15, 16, 18, 19, 20, 22, 24, 24};
-    const int ja[] = {1, 4, 2, 5, 3, 6, 7, 5, 8, 6, 7, 10, 11,
-                      9, 12, 5, 9, 11, 15, 13, 9, 14, 10, 15};
+    const std::size_t ia[] = {0, 2, 4, 6, 7, 9, 10, 12,
+                              13, 15, 16, 18, 19, 20, 22, 24, 24};
+    const int         ja[] = {1, 4, 2, 5, 3, 6, 7, 5, 8, 6, 7, 10, 11,
+                              9, 12, 5, 9, 11, 15, 13, 9, 14, 10, 15};
 
     const int         start_pts[] = { 5, 12 };
     const std::size_t nv          = (sizeof ia) / (sizeof ia[0]) - 1;
@@ -599,11 +599,11 @@ BOOST_AUTO_TEST_CASE (CentreLoopSource12)
     //    14 -> [ 10, 15 ],
     //    15 -> Void (sink cell)
 
-    const int ia[] = {0, 1, 2, 4, 5, 7, 8, 10, 11,
-                      13, 14, 16, 17, 19, 20, 22, 22};
+    const std::size_t ia[] = {0, 1, 2, 4, 5, 7, 8, 10, 11,
+                              13, 14, 16, 17, 19, 20, 22, 22};
 
-    const int ja[] = {1, 2, 3, 6, 7, 0, 5, 6, 7, 10, 11,
-                      4, 9, 5, 9, 11, 15, 8, 13, 14, 10, 15};
+    const int         ja[] = {1, 2, 3, 6, 7, 0, 5, 6, 7, 10, 11,
+                              4, 9, 5, 9, 11, 15, 8, 13, 14, 10, 15};
 
     const std::size_t nv           = (sizeof ia) / (sizeof ia[0]) - 1;
     const std::size_t expect_ncomp = 13;
@@ -668,11 +668,11 @@ BOOST_AUTO_TEST_CASE (CentreLoopSource12Sparse)
     // Note: (ia,ja) is OUTFLOW graph.  We use tarjan_reverse_sccresult() to
     // access the SCCs in topological order.
 
-    const int ia[] = {0, 1, 2, 4, 5, 7, 8, 10, 11,
-                      13, 14, 16, 17, 19, 20, 22, 22};
+    const std::size_t ia[] = {0, 1, 2, 4, 5, 7, 8, 10, 11,
+                              13, 14, 16, 17, 19, 20, 22, 22};
 
-    const int ja[] = {1, 2, 3, 6, 7, 0, 5, 6, 7, 10, 11,
-                      4, 9, 5, 9, 11, 15, 8, 13, 14, 10, 15};
+    const int         ja[] = {1, 2, 3, 6, 7, 0, 5, 6, 7, 10, 11,
+                              4, 9, 5, 9, 11, 15, 8, 13, 14, 10, 15};
 
     const int         start_pts[] = { 7, 14 };
     const std::size_t nv          = (sizeof ia) / (sizeof ia[0]) - 1;

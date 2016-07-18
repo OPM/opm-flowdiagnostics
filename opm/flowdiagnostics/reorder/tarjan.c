@@ -179,7 +179,7 @@ complete_dfs_from_vertex(const size_t            c,
 
 static void
 dfs_from_descendant(const size_t            c,
-                    const int              *ia,
+                    const size_t           *ia,
                     const int              *ja,
                     struct TarjanWorkSpace *work,
                     struct TarjanSCCResult *scc)
@@ -207,13 +207,13 @@ dfs_from_descendant(const size_t            c,
 
 static void
 discover_vertex(const size_t            c,
-                const int              *ia,
+                const size_t           *ia,
                 int                    *time,
                 struct TarjanWorkSpace *work,
                 struct TarjanSCCResult *scc)
 {
     /* number of descendants of c */
-    work->status[c] = ia[c + 1] - ia[c];
+    work->status[c] = (int) (ia[c + 1] - ia[c]);
     work->time[c]   = work->link[c] = (*time)++;
 
     push(scc->cstack) = (int) c;
@@ -254,7 +254,7 @@ tarjan_initialise(struct TarjanWorkSpace *work,
 
 static void
 tarjan_local(const size_t            start,
-             const int              *ia,
+             const size_t           *ia,
              const int              *ja,
              struct TarjanWorkSpace *work,
              struct TarjanSCCResult *scc)
@@ -309,7 +309,7 @@ tarjan_find_start(const size_t                  seed,
 }
 
 static void
-tarjan_global(const int              *ia,
+tarjan_global(const size_t           *ia,
               const int              *ja,
               struct TarjanWorkSpace *work,
               struct TarjanSCCResult *scc)
@@ -363,7 +363,7 @@ swap_scc(struct TarjanSCCResult *scc1,
  * ====================================================================== */
 
 struct TarjanWorkSpace *
-create_tarjan_workspace(const int nvert)
+create_tarjan_workspace(const size_t nvert)
 {
     struct TarjanWorkSpace *ws, ws0 = { 0 };
 
@@ -452,9 +452,9 @@ tarjan_get_strongcomponent(const struct TarjanSCCResult *scc,
 
 /*--------------------------------------------------------------------*/
 struct TarjanSCCResult *
-tarjan(const int  nv,
-       const int *ia,
-       const int *ja)
+tarjan(const size_t  nv,
+       const size_t *ia,
+       const int    *ja)
 /*--------------------------------------------------------------------*/
 {
     struct TarjanWorkSpace *work = NULL;
@@ -482,7 +482,7 @@ tarjan(const int  nv,
 
 struct TarjanSCCResult *
 tarjan_reachable_sccs(const size_t            nv,
-                      const int              *ia,
+                      const size_t           *ia,
                       const int              *ja,
                       const size_t            nstart,
                       const int              *start_pts,
