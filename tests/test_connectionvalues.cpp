@@ -30,7 +30,9 @@
 
 #define BOOST_TEST_MODULE TEST_CONNECTIONVALUES
 
+#include <opm/common/utility/platform_dependent/disable_warnings.h>
 #include <boost/test/unit_test.hpp>
+#include <opm/common/utility/platform_dependent/reenable_warnings.h>
 
 #include <opm/flowdiagnostics/ConnectionValues.hpp>
 
@@ -65,15 +67,15 @@ BOOST_AUTO_TEST_CASE (AssignValues)
 
     {
         for (decltype(v.numConnections())
-                 conn = 0, nconn = v.numConnections();
-             conn < nconn; ++conn)
+                 conn = 0, numconn = v.numConnections();
+             conn < numconn; ++conn)
         {
             for (decltype(v.numPhases())
-                     phas = 0, nphas = v.numPhases();
-                 phas < nphas; ++phas)
+                     phas = 0, numphas = v.numPhases();
+                 phas < numphas; ++phas)
             {
                 v(ConnID{conn}, PhasID{phas}) =
-                    conn*nphas + phas;
+                    conn*numphas + phas;
             }
         }
     }
