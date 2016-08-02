@@ -21,15 +21,11 @@ SOFTWARE.
 */
 
 #include "config.h"
+
+#include <opm/flowdiagnostics/reorder/tarjan.h>
+
 #include <assert.h>
 #include <stddef.h>
-
-#ifdef MATLAB_MEX_FILE
-#include "tarjan.h"
-#else
-#include <opm/flowdiagnostics/reorder/tarjan.h>
-#endif
-
 
 static void
 clear_vector(size_t n, int *v)
