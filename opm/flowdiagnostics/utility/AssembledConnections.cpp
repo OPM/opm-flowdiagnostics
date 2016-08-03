@@ -256,9 +256,7 @@ CSR::accumulateRowEntries(const int               numRows,
     }
 
     // Note index range: 1..numRows inclusive.
-    for (decltype(this->ia_.size())
-             i = 1, numRows = this->ia_.size() - 1;
-         i <= numRows; ++i)
+    for (int i = 1; i <= numRows; ++i)
     {
         this->ia_[0] += this->ia_[i];
         this->ia_[i]  = this->ia_[0] - this->ia_[i];
