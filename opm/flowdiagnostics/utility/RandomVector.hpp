@@ -18,6 +18,9 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef OPM_RANDOMVECTOR_HEADER_INCLUDED
+#define OPM_RANDOMVECTOR_HEADER_INCLUDED
+
 #include <memory>
 #include <vector>
 
@@ -54,3 +57,5 @@ namespace Opm
         };
     }
 } // namespace Opm
+
+#endif // OPM_RANDOMVECTOR_HEADER_INCLUDED
