@@ -27,6 +27,7 @@
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/ConnectionValues.hpp>
 #include <opm/flowdiagnostics/ConnectivityGraph.hpp>
+#include <opm/flowdiagnostics/TracerTofSolver.hpp>
 
 #include <algorithm>
 #include <exception>
@@ -262,43 +263,13 @@ Toolbox::Impl::injDiag(const StartCells& start)
 
     SolnPtr x(new Soln());
 
-    const auto avgToF = 20.0e3;
-    const auto stdToF = 500.0;
+    TracerTofSolver solver(g_, pvol_, flux_);
+    x->assignToF(solver.solveGlobal(start.points));
 
-    x->assignToF(Mock::FieldValue(g_.numCells(), avgToF, stdToF));
-
-    for (const auto& pt : start.points)
-    {
-        const auto npts = static_cast<SampleSize>
-            (std::distance(pt.begin(), pt.end()));
-
-        const auto n = std::min(
-            { npts, g_.numCells(), static_cast<SampleSize>(100) }
-        );
-
-        const auto idx = Mock::Index(n, g_.numCells() - 1);
-
-        {
-            const auto tof = Mock::FieldValue(n, avgToF, stdToF);
-
-            auto val = CellSetValues{ n };
-            for (auto i = 0*n; i < n; ++i) {
-                val.addCellValue(idx[i], tof[i]);
-            }
-
-            x->assign(pt.id(), ToF{ val });
-        }
-
-        {
-            const auto conc = Mock::FieldValue(n, 0.5, 0.15);
-
-            auto val = CellSetValues{ n };
-            for (auto i = 0*n; i < n; ++i) {
-                val.addCellValue(idx[i], conc[i]);
-            }
-
-            x->assign(pt.id(), Conc{ val });
-        }
+    for (const auto& pt : start.points) {
+        auto solution = solver.solveLocal(pt);
+        x->assign(pt.id(), ToF{ solution.tof });
+        x->assign(pt.id(), Conc{ solution.concentration });
     }
 
     return Forward{ Solution(std::move(x)) };

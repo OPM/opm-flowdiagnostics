@@ -271,4 +271,114 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
     }
 }
 
+
+
+
+
+BOOST_AUTO_TEST_CASE (OneDimCase)
+{
+    using FDT = Opm::FlowDiagnosticsTool;
+
+    const auto cas = Setup(5, 1);
+    const auto& graph = cas.connectivity();
+
+    FDT diagTool(graph);
+
+    diagTool.assign(FDT::PoreVolume{ cas.poreVolume() });
+    Opm::ConnectionValues flux(Opm::ConnectionValues::NumConnections{ graph.numConnections() },
+                               Opm::ConnectionValues::NumPhases     { 1 });
+    const size_t nconn = cas.connectivity().numConnections();
+    for (size_t conn = 0; conn < nconn; ++conn) {
+        flux(Opm::ConnectionValues::ConnID{conn}, Opm::ConnectionValues::PhaseID{0}) = 0.3;
+    }
+    diagTool.assign(FDT::ConnectionFlux{ flux });
+
+    auto start = std::vector<Opm::CellSet>{};
+    {
+        start.emplace_back();
+
+        auto& s = start.back();
+
+        s.identify(Opm::CellSetID("I-1"));
+        s.insert(0);
+    }
+
+    {
+        start.emplace_back();
+
+        auto& s = start.back();
+
+        s.identify(Opm::CellSetID("I-2"));
+        s.insert(cas.connectivity().numCells() - 1);
+    }
+
+    const auto fwd = diagTool
+        .computeInjectionDiagnostics(FDT::StartCells{start});
+
+    // Global ToF field (accumulated from all injectors)
+    {
+        const auto tof = fwd.fd.timeOfFlight();
+
+        BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
+        std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 4.5 };
+        BOOST_CHECK_EQUAL_COLLECTIONS(tof.begin(), tof.end(), expected.begin(), expected.end());
+    }
+
+    // Verify set of start points.
+    {
+        const auto startpts = fwd.fd.startPoints();
+
+        BOOST_CHECK_EQUAL(startpts.size(), start.size());
+
+        for (const auto& pt : startpts) {
+            auto pos =
+                std::find_if(start.begin(), start.end(),
+                    [&pt](const Opm::CellSet& s)
+                    {
+                        return s.id().to_string() == pt.to_string();
+                    });
+
+            // ID of 'pt' *MUST* be in set of identified start points.
+            BOOST_CHECK(pos != start.end());
+        }
+    }
+
+    // Tracer-ToF
+    {
+        const auto tof = fwd.fd
+            .timeOfFlight(Opm::CellSetID("I-1"));
+
+        for (decltype(tof.cellValueCount())
+                 i = 0, n = tof.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = tof.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+
+    // Tracer Concentration
+    {
+        const auto conc = fwd.fd
+            .concentration(Opm::CellSetID("I-2"));
+
+        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
+                           conc.cellValueCount());
+
+        for (decltype(conc.cellValueCount())
+                 i = 0, n = conc.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = conc.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
