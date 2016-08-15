@@ -22,7 +22,7 @@
 #include <config.h>
 #endif // HAVE_CONFIG_H
 
-#include <opm/flowdiagnostics/utility/AssembledConnections.hpp>
+#include <opm/utility/graph/AssembledConnections.hpp>
 
 #include <algorithm>
 #include <cassert>

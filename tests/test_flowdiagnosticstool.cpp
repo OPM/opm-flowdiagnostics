@@ -37,7 +37,7 @@
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/ConnectionValues.hpp>
 #include <opm/flowdiagnostics/ConnectivityGraph.hpp>
-#include <opm/flowdiagnostics/utility/RandomVector.hpp>
+#include <opm/utility/numeric/RandomVector.hpp>
 
 #include <algorithm>
 

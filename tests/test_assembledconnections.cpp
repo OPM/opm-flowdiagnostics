@@ -34,7 +34,7 @@
 #include <boost/test/unit_test.hpp>
 #include <opm/common/utility/platform_dependent/reenable_warnings.h>
 
-#include <opm/flowdiagnostics/utility/AssembledConnections.hpp>
+#include <opm/utility/graph/AssembledConnections.hpp>
 
 #include <exception>
 #include <stdexcept>

@@ -24,32 +24,32 @@
 #                             the library needs it.
 
 list (APPEND MAIN_SOURCE_FILES
-	opm/flowdiagnostics/CellSet.cpp
-	opm/flowdiagnostics/CellSetValues.cpp
-	opm/flowdiagnostics/ConnectionValues.cpp
-	opm/flowdiagnostics/ConnectivityGraph.cpp
-	opm/flowdiagnostics/Toolbox.cpp
-	opm/flowdiagnostics/reorder/tarjan.c
-	opm/flowdiagnostics/utility/AssembledConnections.cpp
-	opm/flowdiagnostics/utility/RandomVector.cpp
-	)
+        opm/flowdiagnostics/CellSet.cpp
+        opm/flowdiagnostics/CellSetValues.cpp
+        opm/flowdiagnostics/ConnectionValues.cpp
+        opm/flowdiagnostics/ConnectivityGraph.cpp
+        opm/flowdiagnostics/Toolbox.cpp
+        opm/utility/graph/tarjan.c
+        opm/utility/graph/AssembledConnections.cpp
+        opm/utility/numeric/RandomVector.cpp
+        )
 
 list (APPEND TEST_SOURCE_FILES
-	tests/test_assembledconnections.cpp
-	tests/test_cellset.cpp
-	tests/test_cellsetvalues.cpp
-	tests/test_connectionvalues.cpp
-	tests/test_connectivitygraph.cpp
-	tests/test_flowdiagnosticstool.cpp
-	tests/test_tarjan.cpp
-	)
+        tests/test_assembledconnections.cpp
+        tests/test_cellset.cpp
+        tests/test_cellsetvalues.cpp
+        tests/test_connectionvalues.cpp
+        tests/test_connectivitygraph.cpp
+        tests/test_flowdiagnosticstool.cpp
+        tests/test_tarjan.cpp
+        )
 
 list (APPEND PUBLIC_HEADER_FILES
-	opm/flowdiagnostics/CellSet.hpp
-	opm/flowdiagnostics/CellSetValues.hpp
-	opm/flowdiagnostics/ConnectionValues.hpp
-	opm/flowdiagnostics/ConnectivityGraph.hpp
-	opm/flowdiagnostics/Toolbox.hpp
-	opm/flowdiagnostics/utility/AssembledConnections.hpp
-	opm/flowdiagnostics/utility/RandomVector.hpp
-	)
+        opm/flowdiagnostics/CellSet.hpp
+        opm/flowdiagnostics/CellSetValues.hpp
+        opm/flowdiagnostics/ConnectionValues.hpp
+        opm/flowdiagnostics/ConnectivityGraph.hpp
+        opm/flowdiagnostics/Toolbox.hpp
+        opm/utility/graph/AssembledConnections.hpp
+        opm/utility/numeric/RandomVector.hpp
+        )

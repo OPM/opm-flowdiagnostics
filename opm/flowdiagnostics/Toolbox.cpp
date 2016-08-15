@@ -36,7 +36,7 @@
 #include <utility>
 #include <vector>
 
-#include <opm/flowdiagnostics/utility/RandomVector.hpp>
+#include <opm/utility/numeric/RandomVector.hpp>
 
 namespace { namespace Mock {
 

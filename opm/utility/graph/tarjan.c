@@ -24,7 +24,7 @@ SOFTWARE.
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include <opm/flowdiagnostics/reorder/tarjan.h>
+#include <opm/utility/graph/tarjan.h>
 
 #include <assert.h>
 #include <stddef.h>
