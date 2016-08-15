@@ -18,8 +18,8 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPM_FLOWDIAGNOSTICSTOOL_HEADER_INCLUDED
-#define OPM_FLOWDIAGNOSTICSTOOL_HEADER_INCLUDED
+#ifndef OPM_FLOWDIAGNOSTICS_TOOLBOX_HEADER_INCLUDED
+#define OPM_FLOWDIAGNOSTICS_TOOLBOX_HEADER_INCLUDED
 
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/CellSetValues.hpp>
@@ -29,6 +29,9 @@
 
 namespace Opm
 {
+namespace FlowDiagnostics
+{
+
     // These classes are not defined for the moment, definitions will
     // depend on needs and be refined as we progress.
 
@@ -39,16 +42,16 @@ namespace Opm
     class ConnectionValues;
 
     /// Toolbox for running flow diagnostics.
-    class FlowDiagnosticsTool;
+    class Toolbox;
 
     /// Results from diagnostics computations.
-    class FlowDiagnosticsSolution
+    class Solution
     {
     public:
-        ~FlowDiagnosticsSolution();
+        ~Solution();
 
-        FlowDiagnosticsSolution(const FlowDiagnosticsSolution& rhs);
-        FlowDiagnosticsSolution(FlowDiagnosticsSolution&& rhs);
+        Solution(const Solution& rhs);
+        Solution(Solution&& rhs);
 
         /// Ids of stored tracer solutions.
         std::vector<CellSetID> startPoints() const;
@@ -65,24 +68,24 @@ namespace Opm
         /// computeX...Diagnostics().
         CellSetValues concentration(const CellSetID& tracer) const;
 
-        friend class FlowDiagnosticsTool;
+        friend class Toolbox;
 
     private:
         class Impl;
 
-        explicit FlowDiagnosticsSolution(std::unique_ptr<Impl> pImpl);
+        explicit Solution(std::unique_ptr<Impl> pImpl);
 
         std::unique_ptr<Impl> pImpl_;
     };
 
     /// Toolbox for running flow diagnostics.
-    class FlowDiagnosticsTool
+    class Toolbox
     {
     public:
         /// Construct from known neighbourship relation.
-        explicit FlowDiagnosticsTool(const ConnectivityGraph& connectivity);
+        explicit Toolbox(const ConnectivityGraph& connectivity);
 
-        ~FlowDiagnosticsTool();
+        ~Toolbox();
 
         struct PoreVolume
         {
@@ -101,16 +104,16 @@ namespace Opm
 
         struct Forward
         {
-            const FlowDiagnosticsSolution fd;
+            const Solution fd;
         };
 
         struct Reverse
         {
-            const FlowDiagnosticsSolution fd;
+            const Solution fd;
         };
 
-        FlowDiagnosticsTool& assign(const PoreVolume&     pv);
-        FlowDiagnosticsTool& assign(const ConnectionFlux& flux);
+        Toolbox& assign(const PoreVolume&     pv);
+        Toolbox& assign(const ConnectionFlux& flux);
 
         /// Compute forward time-of-flight and tracer solutions.
         ///
@@ -143,6 +146,8 @@ namespace Opm
 
         std::unique_ptr<Impl> pImpl_;
     };
+
+} // namespace FlowDiagnostics
 } // namespace Opm
 
-#endif // OPM_FLOWDIAGNOSTICSTOOL_HEADER_INCLUDED
+#endif // OPM_FLOWDIAGNOSTICS_TOOLBOX_HEADER_INCLUDED

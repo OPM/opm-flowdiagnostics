@@ -34,12 +34,17 @@
 
 #include <algorithm>
 
-BOOST_AUTO_TEST_SUITE(CellSetID)
+
+using Opm::FlowDiagnostics::CellSet;
+using Opm::FlowDiagnostics::CellSetID;
+
+
+BOOST_AUTO_TEST_SUITE(CellSetIDTest)
 
 BOOST_AUTO_TEST_CASE (Construct)
 {
     {
-        const auto i = Opm::CellSetID{};
+        const auto i = CellSetID{};
 
         BOOST_CHECK_EQUAL(i.to_string(), "");
     }
@@ -47,7 +52,7 @@ BOOST_AUTO_TEST_CASE (Construct)
     {
         const auto name = std::string("Injection");
 
-        const auto i = Opm::CellSetID(name);
+        const auto i = CellSetID(name);
 
         BOOST_CHECK_EQUAL(i.to_string(), name);
     }
@@ -56,12 +61,12 @@ BOOST_AUTO_TEST_CASE (Construct)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_AUTO_TEST_SUITE(CellSet)
+BOOST_AUTO_TEST_SUITE(CellSetTest)
 
 BOOST_AUTO_TEST_CASE (Constructor)
 {
     {
-        auto s = Opm::CellSet{};
+        auto s = CellSet{};
 
         BOOST_CHECK_EQUAL(s.id().to_string(), "");
     }
@@ -69,9 +74,9 @@ BOOST_AUTO_TEST_CASE (Constructor)
     {
         const auto name = std::string("Test-Ctor");
 
-        auto s = Opm::CellSet{};
+        auto s = CellSet{};
         {
-            s.identify(Opm::CellSetID(name));
+            s.identify(CellSetID(name));
         }
 
         BOOST_CHECK_EQUAL(s.id().to_string(), name);
@@ -80,7 +85,7 @@ BOOST_AUTO_TEST_CASE (Constructor)
 
 BOOST_AUTO_TEST_CASE (AssignCells)
 {
-    auto s = Opm::CellSet{};
+    auto s = CellSet{};
 
     const auto cells = std::vector<int>
         { 0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000 };
@@ -100,7 +105,7 @@ BOOST_AUTO_TEST_CASE (AssignCells)
 
 BOOST_AUTO_TEST_CASE (Duplicates)
 {
-    auto s = Opm::CellSet{};
+    auto s = CellSet{};
 
     const auto cells = std::vector<int>
         { 0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000 };

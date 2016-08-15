@@ -25,6 +25,8 @@
 
 namespace Opm
 {
+namespace FlowDiagnostics
+{
     class ConnectivityGraph
     {
     public:
@@ -55,6 +57,7 @@ namespace Opm
         std::vector<int> connCells_;
     };
 
+} // namespace FlowDiagnostics
 } // namespace Opm
 
 #endif // OPM_CONNECTIVITYGRAPH_HEADER_INCLUDED

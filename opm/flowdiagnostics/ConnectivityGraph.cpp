@@ -30,8 +30,13 @@
 #include <stdexcept>
 #include <utility>
 
-Opm::ConnectivityGraph::ConnectivityGraph(const int        num_cells,
-                                          std::vector<int> connection_to_cell)
+namespace Opm
+{
+namespace FlowDiagnostics
+{
+
+ConnectivityGraph::ConnectivityGraph(const int        num_cells,
+                                     std::vector<int> connection_to_cell)
     : numCells_ (num_cells)
     , connCells_(std::move(connection_to_cell))
 {
@@ -48,20 +53,20 @@ Opm::ConnectivityGraph::ConnectivityGraph(const int        num_cells,
     }
 }
 
-Opm::ConnectivityGraph::SizeType
-Opm::ConnectivityGraph::numCells() const
+ConnectivityGraph::SizeType
+ConnectivityGraph::numCells() const
 {
     return numCells_;
 }
 
-Opm::ConnectivityGraph::SizeType
-Opm::ConnectivityGraph::numConnections() const
+ConnectivityGraph::SizeType
+ConnectivityGraph::numConnections() const
 {
     return connCells_.size() / 2;
 }
 
-Opm::ConnectivityGraph::CellPair
-Opm::ConnectivityGraph::connection(const SizeType i) const
+ConnectivityGraph::CellPair
+ConnectivityGraph::connection(const SizeType i) const
 {
     assert (i < numConnections());
 
@@ -69,3 +74,7 @@ Opm::ConnectivityGraph::connection(const SizeType i) const
 
     return { *(start + 0), *(start + 1) };
 }
+
+} // namespace FlowDiagnostics
+} // namespace Opm
+

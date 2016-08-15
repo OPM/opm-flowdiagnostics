@@ -25,6 +25,7 @@
 #include <vector>
 
 namespace Opm {
+namespace FlowDiagnostics {
 
     class CellSetValues
     {
@@ -69,6 +70,7 @@ namespace Opm {
         std::vector<Association> assoc_;
     };
 
+} // namespace FlowDiagnostics
 } // namespace Opm
 
 #endif // OPM_CELLSETVALUES_HEADER_INCLUDED

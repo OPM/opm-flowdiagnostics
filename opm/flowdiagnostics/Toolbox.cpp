@@ -22,7 +22,7 @@
 #include <config.h>
 #endif // HAVE_CONFIG_H
 
-#include <opm/flowdiagnostics/FlowDiagnosticsTool.hpp>
+#include <opm/flowdiagnostics/Toolbox.hpp>
 
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/ConnectionValues.hpp>
@@ -60,11 +60,18 @@ namespace { namespace Mock {
 
 }} // namespace (anonymous)::Mock
 
+
+namespace Opm
+{
+namespace FlowDiagnostics
+{
+
+
 // ---------------------------------------------------------------------
-// Class Opm::FlowDiagnosticsSolution::Impl
+// Class Solution::Impl
 // ---------------------------------------------------------------------
 
-class Opm::FlowDiagnosticsSolution::Impl
+class Solution::Impl
 {
 public:
     using GlobalToF = std::vector<double>;
@@ -117,27 +124,27 @@ private:
 };
 
 void
-Opm::FlowDiagnosticsSolution::Impl::assignToF(GlobalToF&& tof)
+Solution::Impl::assignToF(GlobalToF&& tof)
 {
     tof_ = std::move(tof);
 }
 
 void
-Opm::FlowDiagnosticsSolution::
+Solution::
 Impl::assign(const CellSetID& i, TimeOfFlight&& tof)
 {
     assign(i, std::move(tof.data), tracerToF_);
 }
 
 void
-Opm::FlowDiagnosticsSolution::
+Solution::
 Impl::assign(const CellSetID& i, Concentration&& conc)
 {
     assign(i, std::move(conc.data), tracer_);
 }
 
-std::vector<Opm::CellSetID>
-Opm::FlowDiagnosticsSolution::Impl::startPoints() const
+std::vector<CellSetID>
+Solution::Impl::startPoints() const
 {
     auto s = std::vector<CellSetID>{};
     s.reserve(tracer_.size());
@@ -149,28 +156,28 @@ Opm::FlowDiagnosticsSolution::Impl::startPoints() const
     return s;
 }
 
-const Opm::FlowDiagnosticsSolution::Impl::GlobalToF&
-Opm::FlowDiagnosticsSolution::Impl::timeOfFlight() const
+const Solution::Impl::GlobalToF&
+Solution::Impl::timeOfFlight() const
 {
     return tof_;
 }
 
-Opm::CellSetValues
-Opm::FlowDiagnosticsSolution::
+CellSetValues
+Solution::
 Impl::timeOfFlight(const CellSetID& tracer) const
 {
     return solutionValues(tracer, tracerToF_);
 }
 
-Opm::CellSetValues
-Opm::FlowDiagnosticsSolution::
+CellSetValues
+Solution::
 Impl::concentration(const CellSetID& tracer) const
 {
     return solutionValues(tracer, tracer_);
 }
 
 void
-Opm::FlowDiagnosticsSolution::
+Solution::
 Impl::assign(const CellSetID& i,
              CellSetValues&&  x,
              SolutionMap&     soln)
@@ -178,8 +185,8 @@ Impl::assign(const CellSetID& i,
     soln[i] = std::move(x);
 }
 
-Opm::CellSetValues
-Opm::FlowDiagnosticsSolution::
+CellSetValues
+Solution::
 Impl::solutionValues(const CellSetID&   i,
                      const SolutionMap& soln) const
 {
@@ -193,10 +200,10 @@ Impl::solutionValues(const CellSetID&   i,
 }
 
 // ---------------------------------------------------------------------
-// Class Opm::FlowDiagnosticsTool::Impl
+// Class Toolbox::Impl
 // ---------------------------------------------------------------------
 
-class Opm::FlowDiagnosticsTool::Impl
+class Toolbox::Impl
 {
 public:
     explicit Impl(ConnectivityGraph g);
@@ -214,7 +221,7 @@ private:
     ConnectionValues    flux_;
 };
 
-Opm::FlowDiagnosticsTool::Impl::Impl(ConnectivityGraph g)
+Toolbox::Impl::Impl(ConnectivityGraph g)
     : g_   (std::move(g))
     , pvol_(g_.numCells(), 0.0)
     , flux_(ConnectionValues::NumConnections{ 0 },
@@ -222,7 +229,7 @@ Opm::FlowDiagnosticsTool::Impl::Impl(ConnectivityGraph g)
 {}
 
 void
-Opm::FlowDiagnosticsTool::Impl::assign(const PoreVolume& pv)
+Toolbox::Impl::assign(const PoreVolume& pv)
 {
     if (pv.data.size() != pvol_.size()) {
         throw std::logic_error("Inconsistently sized input "
@@ -233,7 +240,7 @@ Opm::FlowDiagnosticsTool::Impl::assign(const PoreVolume& pv)
 }
 
 void
-Opm::FlowDiagnosticsTool::Impl::assign(const ConnectionFlux& flux)
+Toolbox::Impl::assign(const ConnectionFlux& flux)
 {
     if (flux.data.numConnections() != g_.numConnections()) {
         throw std::logic_error("Inconsistently sized input "
@@ -243,11 +250,11 @@ Opm::FlowDiagnosticsTool::Impl::assign(const ConnectionFlux& flux)
     flux_ = flux.data;
 }
 
-Opm::FlowDiagnosticsTool::Forward
-Opm::FlowDiagnosticsTool::Impl::injDiag(const StartCells& start)
+Toolbox::Forward
+Toolbox::Impl::injDiag(const StartCells& start)
 {
     using SampleSize = Opm::Utility::RandomVector::Size;
-    using Soln       = FlowDiagnosticsSolution::Impl;
+    using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;
 
@@ -294,14 +301,14 @@ Opm::FlowDiagnosticsTool::Impl::injDiag(const StartCells& start)
         }
     }
 
-    return Forward{ FlowDiagnosticsSolution(std::move(x)) };
+    return Forward{ Solution(std::move(x)) };
 }
 
-Opm::FlowDiagnosticsTool::Reverse
-Opm::FlowDiagnosticsTool::Impl::prodDiag(const StartCells& start)
+Toolbox::Reverse
+Toolbox::Impl::prodDiag(const StartCells& start)
 {
     using SampleSize = Opm::Utility::RandomVector::Size;
-    using Soln       = FlowDiagnosticsSolution::Impl;
+    using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;
 
@@ -348,7 +355,7 @@ Opm::FlowDiagnosticsTool::Impl::prodDiag(const StartCells& start)
         }
     }
 
-    return Reverse{ FlowDiagnosticsSolution(std::move(x)) };
+    return Reverse{ Solution(std::move(x)) };
 }
 
 // =====================================================================
@@ -356,89 +363,93 @@ Opm::FlowDiagnosticsTool::Impl::prodDiag(const StartCells& start)
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// Class Opm::FlowDiagnosticsSolution
+// Class Solution
 // ---------------------------------------------------------------------
 
-Opm::FlowDiagnosticsSolution::~FlowDiagnosticsSolution()
+Solution::~Solution()
 {}
 
-Opm::FlowDiagnosticsSolution::
-FlowDiagnosticsSolution(const FlowDiagnosticsSolution& rhs)
+Solution::
+Solution(const FlowDiagnostics::Solution& rhs)
     : pImpl_(new Impl(*rhs.pImpl_))
 {}
 
-Opm::FlowDiagnosticsSolution::
-FlowDiagnosticsSolution(FlowDiagnosticsSolution&& rhs)
+Solution::
+Solution(FlowDiagnostics::Solution&& rhs)
     : pImpl_(std::move(rhs.pImpl_))
 {}
 
-Opm::FlowDiagnosticsSolution::
-FlowDiagnosticsSolution(std::unique_ptr<Impl> pImpl)
+Solution::
+Solution(std::unique_ptr<Impl> pImpl)
     : pImpl_(std::move(pImpl))
 {}
 
-std::vector<Opm::CellSetID>
-Opm::FlowDiagnosticsSolution::startPoints() const
+std::vector<CellSetID>
+Solution::startPoints() const
 {
     return pImpl_->startPoints();
 }
 
 const std::vector<double>&
-Opm::FlowDiagnosticsSolution::timeOfFlight() const
+Solution::timeOfFlight() const
 {
     return pImpl_->timeOfFlight();
 }
 
-Opm::CellSetValues
-Opm::FlowDiagnosticsSolution::timeOfFlight(const CellSetID& tracer) const
+CellSetValues
+Solution::timeOfFlight(const CellSetID& tracer) const
 {
     return pImpl_->timeOfFlight(tracer);
 }
 
-Opm::CellSetValues
-Opm::FlowDiagnosticsSolution::concentration(const CellSetID& tracer) const
+CellSetValues
+Solution::concentration(const CellSetID& tracer) const
 {
     return pImpl_->concentration(tracer);
 }
 
 // ---------------------------------------------------------------------
-// Class Opm::FlowDiagnosticsTool
+// Class Toolbox
 // ---------------------------------------------------------------------
 
-Opm::FlowDiagnosticsTool::
-FlowDiagnosticsTool(const ConnectivityGraph& conn)
+Toolbox::
+Toolbox(const ConnectivityGraph& conn)
     : pImpl_(new Impl(conn))
 {}
 
-Opm::FlowDiagnosticsTool::~FlowDiagnosticsTool()
+Toolbox::~Toolbox()
 {}
 
-Opm::FlowDiagnosticsTool&
-Opm::FlowDiagnosticsTool::assign(const PoreVolume& pv)
+Toolbox&
+Toolbox::assign(const PoreVolume& pv)
 {
     pImpl_->assign(pv);
 
     return *this;
 }
 
-Opm::FlowDiagnosticsTool&
-Opm::FlowDiagnosticsTool::assign(const ConnectionFlux& flux)
+Toolbox&
+Toolbox::assign(const ConnectionFlux& flux)
 {
     pImpl_->assign(flux);
 
     return *this;
 }
 
-Opm::FlowDiagnosticsTool::Forward
-Opm::FlowDiagnosticsTool::
+Toolbox::Forward
+Toolbox::
 computeInjectionDiagnostics(const StartCells& start)
 {
     return pImpl_->injDiag(start);
 }
 
-Opm::FlowDiagnosticsTool::Reverse
-Opm::FlowDiagnosticsTool::
+Toolbox::Reverse
+Toolbox::
 computeProductionDiagnostics(const StartCells& start)
 {
     return pImpl_->prodDiag(start);
 }
+
+
+} // namespace FlowDiagnostics
+} // namespace Opm

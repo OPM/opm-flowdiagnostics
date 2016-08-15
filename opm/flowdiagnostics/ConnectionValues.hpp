@@ -26,6 +26,10 @@
 
 namespace Opm
 {
+namespace FlowDiagnostics
+{
+
+
     class ConnectionValues
     {
     public:
@@ -67,6 +71,8 @@ namespace Opm
 
         std::vector<double> data_;
     };
+
+} // namespace FlowDiagnostics
 } // namespace Opm
 
 #endif // OPM_CONNECTIONVALUES_HEADER_INCLUDED
