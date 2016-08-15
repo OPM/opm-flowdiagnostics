@@ -274,6 +274,29 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
 
 
 
+namespace {
+
+    template <class Collection1, class Collection2>
+    void check_is_close(const Collection1& c1, const Collection2& c2)
+    {
+        BOOST_REQUIRE_EQUAL(c1.size(), c2.size());
+
+        if (! c1.empty()) {
+            auto i1 = c1.begin(), e1 = c1.end();
+            auto i2 = c2.begin();
+
+            for (; i1 != e1; ++i1, ++i2) {
+                BOOST_CHECK_CLOSE(*i1, *i2, 1.0e-10);
+            }
+        }
+    }
+
+} // Namespace Anonymous
+
+
+
+
+
 
 BOOST_AUTO_TEST_CASE (OneDimCase)
 {
@@ -321,7 +344,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
         std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 4.5 };
-        BOOST_CHECK_EQUAL_COLLECTIONS(tof.begin(), tof.end(), expected.begin(), expected.end());
+        check_is_close(tof, expected);
     }
 
     // Verify set of start points.
