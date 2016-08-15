@@ -44,6 +44,12 @@ namespace Opm
         std::vector<double> solveGlobal(const std::vector<CellSet>& all_startsets)
         {
             static_cast<void>(all_startsets);
+            upwind_influx_.clear();
+            upwind_influx_.resize(g_.numCells(), 0.0);
+            upwind_contrib_.clear();
+            upwind_contrib_.resize(g_.numCells(), 0.0);
+            tof_.clear();
+            tof_.resize(g_.numCells(), -1e100);
             computeOrdering();
             const int num_components = component_starts_.size() - 1;
             for (int comp = 0; comp < num_components; ++comp) {
@@ -54,7 +60,7 @@ namespace Opm
                     solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
                 }
             }
-            return std::vector<double>(pv_.size(), 0.0);
+            return tof_;
         }
 
         struct LocalSolution {
@@ -65,8 +71,6 @@ namespace Opm
         LocalSolution solveLocal(const CellSet& startset)
         {
             static_cast<void>(startset);
-            static_cast<void>(g_);
-            static_cast<void>(flux_);
             return LocalSolution{ CellSetValues{}, CellSetValues{} };
         }
 
@@ -76,32 +80,40 @@ namespace Opm
             // Create the data structure needed for Tarjan's algorithm.
             const size_t num_cells = g_.numCells();
             const size_t num_connections = g_.numConnections();
-            Utility::AssembledConnections ac;
+            assembled_conn_ = Utility::AssembledConnections();
             for (size_t conn_idx = 0; conn_idx < num_connections; ++conn_idx) {
                 auto cells = g_.connection(conn_idx);
                 const double connection_flux = flux_(ConnectionValues::ConnID{conn_idx},
                                                      ConnectionValues::PhaseID{0});
                 if (connection_flux > 0.0) {
-                    ac.addConnection(cells.first, cells.second, connection_flux);
+                    assembled_conn_.addConnection(cells.first, cells.second, connection_flux);
                 } else {
-                    ac.addConnection(cells.second, cells.first, -connection_flux);
+                    assembled_conn_.addConnection(cells.second, cells.first, -connection_flux);
                 }
             }
-            ac.compress();
+            assembled_conn_.compress();
 
             // We might have to pad the start pointers if the last
             // cell(s) did not have outgoing fluxes, to get the
             // traditional format expected by tarjan().
-            auto sp = ac.startPointers();
+            auto sp = assembled_conn_.startPointers();
             if (sp.size() != num_cells + 1) {
                 assert(sp.size() < num_cells + 1);
                 sp.insert(sp.end(), num_cells + 1 - sp.size(), sp.back());
             }
             assert(sp.size() == num_cells + 1);
 
-            // Compute topological ordering.
+            // Compute reverse topological ordering.
             struct Deleter { void operator()(TarjanSCCResult* x) { destroy_tarjan_sccresult(x); } };
-            std::unique_ptr<TarjanSCCResult, Deleter> result(tarjan(num_cells, sp.data(), ac.neighbourhood().data()));
+            std::unique_ptr<TarjanSCCResult, Deleter> result(tarjan(num_cells,
+                                                                    sp.data(),
+                                                                    assembled_conn_.neighbourhood().data()));
+
+            // Must reverse ordering, since Tarjan computes reverse ordering.
+            const int ok = tarjan_reverse_sccresult(result.get());
+            if (!ok) {
+                throw std::runtime_error("Failed to reverse ordering.");
+            }
 
             // Extract data from solution.
             sequence_.resize(num_cells);
@@ -118,44 +130,44 @@ namespace Opm
 
         void solveSingleCell(const int cell)
         {
-            static_cast<void>(cell);
-#if 0
-            // Compute flux terms.
-            // Sources have zero tof, and therefore do not contribute
-            // to upwind_term. Sinks on the other hand, must be added
-            // to the downwind_flux (note sign change resulting from
-            // different sign conventions: pos. source is injection,
-            // pos. flux is outflow).
-            double upwind_term = 0.0;
-            double downwind_flux = std::max(-source_[cell], 0.0);
-            for (int i = grid_.cell_facepos[cell]; i < grid_.cell_facepos[cell+1]; ++i) {
-                int f = grid_.cell_faces[i];
-                double flux;
-                int other;
-                // Compute cell flux
-                if (cell == grid_.face_cells[2*f]) {
-                    flux  = darcyflux_[f];
-                    other = grid_.face_cells[2*f+1];
-                } else {
-                    flux  =-darcyflux_[f];
-                    other = grid_.face_cells[2*f];
-                }
-                // Add flux to upwind_term or downwind_flux
-                if (flux < 0.0) {
-                    // Using tof == 0 on inflow, so we only add a
-                    // nonzero contribution if we are on an internal
-                    // face.
-                    if (other != -1) {
-                        upwind_term += flux*tof_[other];
-                    }
-                } else {
+            // Compute downwind fluxes.
+            double downwind_flux = 0.0;
+            const auto& sp = assembled_conn_.startPointers();
+            if (cell < int(sp.size()) - 1) { // TODO: remove test when CRS from AC valid.
+                for (size_t connection_index = sp[cell]; connection_index < sp[cell + 1]; ++connection_index) {
+                    const double flux = assembled_conn_.connectionWeight()[connection_index];
                     downwind_flux += flux;
                 }
             }
 
+            // If source cell, we have influx not accounted for, and
+            // downwind_flux > upwind_flux_[cell]. However the tof at
+            // the influx (wells typically) is zero, so there is no
+            // contribution. However, we will customary halve the tof
+            // for that cell.
+            // If sink cell, we have outflux not accounted for, and
+            // downwind_flux < upwind_flux_[cell]. In that case we
+            // account for it by assuming incompressibility and making
+            // them equal.
+            downwind_flux = std::max(downwind_flux, upwind_influx_[cell]);
+
             // Compute tof.
-            tof_[cell] = (porevolume_[cell] - upwind_term)/downwind_flux;
-#endif
+            tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/downwind_flux;
+
+            // Halve if source (well inflow) cell.
+            if (upwind_influx_[cell] == 0.0) {
+                tof_[cell] = 0.5 * tof_[cell];
+            }
+
+            // Set contribution for my downwind cells (if any).
+            if (cell < int(sp.size()) - 1) { // TODO: remove test when CRS from AC valid.
+                for (size_t connection_index = sp[cell]; connection_index < sp[cell + 1]; ++connection_index) {
+                    const int downwind_cell = assembled_conn_.neighbourhood()[connection_index];
+                    const double flux = assembled_conn_.connectionWeight()[connection_index];
+                    upwind_influx_[downwind_cell] += flux;
+                    upwind_contrib_[downwind_cell] += tof_[cell] * flux;
+                }
+            }
         }
 
 
@@ -168,8 +180,12 @@ namespace Opm
         const ConnectivityGraph& g_;
         const std::vector<double>& pv_;
         const ConnectionValues& flux_;
+        Utility::AssembledConnections assembled_conn_;
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
+        std::vector<double> upwind_influx_;
+        std::vector<double> upwind_contrib_;
+        std::vector<double> tof_;
     };
 
 } // namespace Opm
