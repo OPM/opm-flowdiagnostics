@@ -44,7 +44,7 @@ namespace { namespace Mock {
     FieldValue(const std::vector<double>::size_type n,
                const double mean, const double stdev)
     {
-        static Opm::Utility::RandomVector genRandom{};
+        static Opm::RandomVector genRandom{};
 
         return genRandom.normal(n, mean, stdev);
     }
@@ -53,7 +53,7 @@ namespace { namespace Mock {
     Index(const std::vector<double>::size_type n,
           const int maxIdx)
     {
-        static Opm::Utility::RandomVector genRandom{};
+        static Opm::RandomVector genRandom{};
 
         return genRandom.index(n, maxIdx);
     }
@@ -253,7 +253,7 @@ Toolbox::Impl::assign(const ConnectionFlux& flux)
 Toolbox::Forward
 Toolbox::Impl::injDiag(const StartCells& start)
 {
-    using SampleSize = Opm::Utility::RandomVector::Size;
+    using SampleSize = RandomVector::Size;
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;
@@ -307,7 +307,7 @@ Toolbox::Impl::injDiag(const StartCells& start)
 Toolbox::Reverse
 Toolbox::Impl::prodDiag(const StartCells& start)
 {
-    using SampleSize = Opm::Utility::RandomVector::Size;
+    using SampleSize = RandomVector::Size;
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;

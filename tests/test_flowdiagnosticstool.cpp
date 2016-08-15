@@ -95,7 +95,7 @@ namespace
     std::vector<double>
     flowField(const std::vector<double>::size_type n)
     {
-        static Opm::Utility::RandomVector genRandom{};
+        static Opm::RandomVector genRandom{};
 
         return genRandom.normal(n);
     }

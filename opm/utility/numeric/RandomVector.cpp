@@ -26,7 +26,7 @@
 
 #include <random>
 
-class Opm::Utility::RandomVector::Impl
+class Opm::RandomVector::Impl
 {
 public:
     Sample normal(const Size   n,
@@ -43,8 +43,8 @@ private:
     BitGenerator gen_;
 };
 
-Opm::Utility::RandomVector::Sample
-Opm::Utility::RandomVector::
+Opm::RandomVector::Sample
+Opm::RandomVector::
 Impl::normal(const Size n, const double mean, const double stdev)
 {
     auto distr = std::normal_distribution<>{ mean, stdev };
@@ -60,7 +60,7 @@ Impl::normal(const Size n, const double mean, const double stdev)
 }
 
 std::vector<int>
-Opm::Utility::RandomVector::
+Opm::RandomVector::
 Impl::integer(const Size n, const int min, const int max
 )
 {
@@ -78,23 +78,23 @@ Impl::integer(const Size n, const int min, const int max
 
 // =====================================================================
 
-Opm::Utility::RandomVector::RandomVector()
+Opm::RandomVector::RandomVector()
     : pImpl_(new Impl())
 {}
 
-Opm::Utility::RandomVector::~RandomVector()
+Opm::RandomVector::~RandomVector()
 {}
 
-Opm::Utility::RandomVector::Sample
-Opm::Utility::RandomVector::normal(const Size   n,
-                                   const double mean,
-                                   const double stdev)
+Opm::RandomVector::Sample
+Opm::RandomVector::normal(const Size   n,
+                          const double mean,
+                          const double stdev)
 {
     return pImpl_->normal(n, mean, stdev);
 }
 
 std::vector<int>
-Opm::Utility::RandomVector::index(const Size n, const int maxIdx)
+Opm::RandomVector::index(const Size n, const int maxIdx)
 {
     return pImpl_->integer(n, 0, maxIdx);
 }

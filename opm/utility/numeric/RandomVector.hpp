@@ -26,36 +26,34 @@
 
 namespace Opm
 {
-    namespace Utility
+    class RandomVector
     {
-        class RandomVector
-        {
-        public:
-            using Sample = std::vector<double>;
-            using Size   = Sample::size_type;
+    public:
+        using Sample = std::vector<double>;
+        using Size   = Sample::size_type;
 
-            RandomVector();
-            ~RandomVector();
+        RandomVector();
+        ~RandomVector();
 
-            RandomVector(const RandomVector& rhs) = delete;
-            RandomVector(RandomVector&&      rhs) = delete;
+        RandomVector(const RandomVector& rhs) = delete;
+        RandomVector(RandomVector&&      rhs) = delete;
 
-            RandomVector& operator=(const RandomVector& rhs) = delete;
-            RandomVector& operator=(RandomVector&&      rhs) = delete;
+        RandomVector& operator=(const RandomVector& rhs) = delete;
+        RandomVector& operator=(RandomVector&&      rhs) = delete;
 
-            Sample normal(const Size   n,
-                          const double mean  = 0.0,
-                          const double stdev = 1.0);
+        Sample normal(const Size   n,
+                      const double mean  = 0.0,
+                      const double stdev = 1.0);
 
-            std::vector<int> index(const Size n,
-                                   const int  maxIdx);
+        std::vector<int> index(const Size n,
+                               const int  maxIdx);
 
-        private:
-            class Impl;
+    private:
+        class Impl;
 
-            std::unique_ptr<Impl> pImpl_;
-        };
-    }
+        std::unique_ptr<Impl> pImpl_;
+    };
+
 } // namespace Opm
 
 #endif // OPM_RANDOMVECTOR_HEADER_INCLUDED
