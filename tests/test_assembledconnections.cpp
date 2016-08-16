@@ -71,12 +71,12 @@ BOOST_AUTO_TEST_CASE (Zero_To_One)
 
     g.addConnection(0, 1);
 
-    g.compress();
+    g.compress(4);
 
     {
         const auto start = g.startPointers();
 
-        const auto expect_ia = std::vector<int>{ 0, 1 };
+        const auto expect_ia = std::vector<int>{ 0, 1, 1, 1, 1 };
 
         BOOST_CHECK_EQUAL_COLLECTIONS(start    .begin(), start    .end(),
                                       expect_ia.begin(), expect_ia.end());
@@ -99,12 +99,12 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two)
     g.addConnection(0, 2);
     g.addConnection(0, 1);
 
-    g.compress();
+    g.compress(4);
 
     {
         const auto start = g.startPointers();
 
-        const auto expect_ia = std::vector<int>{ 0, 2 };
+        const auto expect_ia = std::vector<int>{ 0, 2, 2, 2, 2 };
 
         BOOST_CHECK_EQUAL_COLLECTIONS(start    .begin(), start    .end(),
                                       expect_ia.begin(), expect_ia.end());
@@ -138,12 +138,12 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two_Duplicate)
         g.addConnection(0, 1);
     }
 
-    g.compress();
+    g.compress(4);
 
     {
         const auto start = g.startPointers();
 
-        const auto expect_ia = std::vector<int>{ 0, 2 };
+        const auto expect_ia = std::vector<int>{ 0, 2, 2, 2, 2 };
 
         BOOST_CHECK_EQUAL_COLLECTIONS(start    .begin(), start    .end(),
                                       expect_ia.begin(), expect_ia.end());
@@ -159,6 +159,65 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two_Duplicate)
     }
 }
 
+BOOST_AUTO_TEST_CASE (No_Out_Edge_From_High_Vertex)
+{
+    // Vertex of highest numerical ID not referenced as source vertex in
+    // connection list.  We must still produce a complete adjacency
+    // representation that is aware of all vertices when the expected size
+    // is provided.
+    auto g = Opm::AssembledConnections{};
+
+    g.addConnection(0, 1, 1.0);
+    g.addConnection(0, 2, 1.0);
+    g.addConnection(1, 3, 1.0);
+    g.addConnection(2, 3, 1.0);
+
+    g.compress(4);
+
+    {
+        const auto start = g.startPointers();
+
+        const auto expect_ia = std::vector<int>{ 0, 2, 3, 4, 4 };
+
+        BOOST_CHECK_EQUAL_COLLECTIONS(start    .begin(), start    .end(),
+                                      expect_ia.begin(), expect_ia.end());
+    }
+
+    {
+        const auto neigh = g.neighbourhood();
+
+        const auto expect_ja = std::vector<int>{ 1, 2, 3, 3 };
+
+        BOOST_CHECK_EQUAL_COLLECTIONS(neigh    .begin(), neigh    .end(),
+                                      expect_ja.begin(), expect_ja.end());
+    }
+
+    {
+        const auto w = g.connectionWeight();
+
+        const auto expect_w = std::vector<double>{
+            1.0, 1.0, 1.0, 1.0
+        };
+
+        check_is_close(w, expect_w);
+    }
+}
+
+BOOST_AUTO_TEST_CASE (Unexpected_Vertex_ID)
+{
+    // We expect a lower number of vertices than are actually present.  This
+    // is an error.
+
+    auto g = Opm::AssembledConnections{};
+
+    g.addConnection(0, 1);
+    g.addConnection(0, 2);
+    g.addConnection(1, 3);
+    g.addConnection(3, 2);
+
+    BOOST_CHECK_THROW(g.compress(3), std::invalid_argument);
+}
+
 BOOST_AUTO_TEST_CASE (Isolated_Node)
 {
     auto g = Opm::AssembledConnections{};
@@ -167,7 +226,7 @@ BOOST_AUTO_TEST_CASE (Isolated_Node)
     g.addConnection(0, 2);
     g.addConnection(0, 0);
 
-    g.compress();
+    g.compress(3);
 
     {
         const auto start = g.startPointers();
@@ -199,7 +258,7 @@ BOOST_AUTO_TEST_CASE (All_To_All)
         }
     }
 
-    g.compress();
+    g.compress(n);
 
     {
         const auto start = g.startPointers();
@@ -242,7 +301,7 @@ BOOST_AUTO_TEST_CASE (All_To_All_Duplicate)
         }
     }
 
-    g.compress();
+    g.compress(n);
 
     {
         const auto start = g.startPointers();
@@ -279,12 +338,12 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Single)
 
     g.addConnection(2, 3, -23.0);
 
-    g.compress();
+    g.compress(4);
 
     {
         const auto start = g.startPointers();
 
-        const auto expect_ia = std::vector<int>{ 0, 2, 3, 4 };
+        const auto expect_ia = std::vector<int>{ 0, 2, 3, 4, 4 };
 
         BOOST_CHECK_EQUAL_COLLECTIONS(start    .begin(), start    .end(),
                                       expect_ia.begin(), expect_ia.end());
@@ -341,12 +400,12 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
         g.addConnection(2, 3, -23.0);
     }
 
-    g.compress();
+    g.compress(4);
 
     {
         const auto start = g.startPointers();
 
-        const auto expect_ia = std::vector<int>{ 0, 2, 3, 4 };
+        const auto expect_ia = std::vector<int>{ 0, 2, 3, 4, 4 };
 
         BOOST_CHECK_EQUAL_COLLECTIONS(start    .begin(), start    .end(),
                                       expect_ia.begin(), expect_ia.end());
@@ -396,7 +455,7 @@ BOOST_AUTO_TEST_CASE (Compress_Invalid_Throw)
     g.addConnection(0, 2, 1.0);
 
     // Can't mix weighted and unweighted edges.
-    BOOST_CHECK_THROW(g.compress(), std::logic_error);
+    BOOST_CHECK_THROW(g.compress(3), std::logic_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

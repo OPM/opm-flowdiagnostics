@@ -22,6 +22,8 @@
 #define OPM_ASSEMBLEDCONNECTIONS_HEADER_INCLUDED
 
 #include <opm/utility/graph/AssembledConnectionsIteration.hpp>
+
+#include <cstddef>
 #include <vector>
 
 namespace Opm {
@@ -32,7 +34,24 @@ namespace Opm {
         void addConnection(const int i, const int j);
         void addConnection(const int i, const int j, const double v);
 
-        void compress();
+
+        /// Form CSR adjacency matrix representation of input graph from
+        /// connections established in previous calls to addConnection().
+        ///
+        /// A call to function compress() will fail unless all previously
+        /// established connections have an explicit edge weight (\code
+        /// addConnection(i,j,v) \endcode) or none of those connections have
+        /// an explicit edge weight (\code addConnection(i,j) \endcode).
+        ///
+        /// This method destroys the connection list so if there are
+        /// subsequent calls to method addConnection() then those will
+        /// effectively create a new graph.
+        ///
+        /// \param[in] numRows Number of rows in resulting CSR matrix.  If
+        ///     prior calls to addConnection() supply source entity IDs (row
+        ///     indices) greater than or equal to \p numRows, then method
+        ///     compress() will throw \code std::invalid_argument \endcode.
+        void compress(const std::size_t numRows);
 
         using Neighbours     = std::vector<int>;
         using Offset         = Neighbours::size_type;
@@ -97,7 +116,8 @@ namespace Opm {
         class CSR
         {
         public:
-            void create(const Connections& conns);
+            void create(const Connections& conns,
+                        const Offset       numRows);
 
             const Start&      ia() const;
             const Neighbours& ja() const;
