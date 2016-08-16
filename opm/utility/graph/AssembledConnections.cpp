@@ -126,9 +126,16 @@ Opm::AssembledConnections::Connections::v() const
 
 void
 Opm::AssembledConnections::
-CSR::create(const Connections& conns)
+CSR::create(const Connections& conns, const Offset numrows)
 {
-    assert (!conns.empty() && conns.isValid());
+    if (! conns.empty() &&
+        (static_cast<Offset>(conns.maxRow()) >= numrows))
+    {
+        throw std::invalid_argument("Input graph contains more "
+                                    "source vertices than are "
+                                    "implied by explicit size of "
+                                    "adjacency matrix");
+    }
 
     this->assemble(conns);
 
@@ -139,6 +146,13 @@ CSR::create(const Connections& conns)
 
     if (conns.isWeighted()) {
         this->accumulateConnWeights(conns.v());
+    }
+
+    const auto nRows = this->ia().size() - 1;
+    if (nRows < numrows) {
+        this->ia_.insert(this->ia_.end(),
+                         numrows - nRows,
+                         this->ia().back());
     }
 }
 
@@ -244,6 +258,8 @@ Opm::AssembledConnections::
 CSR::accumulateRowEntries(const int               numRows,
                           const std::vector<int>& rowIdx)
 {
+    assert (numRows >= 0);
+
     auto vecIdx = [](const int i)
     {
         return static_cast<Start::size_type>(i);
@@ -256,7 +272,9 @@ CSR::accumulateRowEntries(const int               numRows,
     }
 
     // Note index range: 1..numRows inclusive.
-    for (int i = 1; i <= numRows; ++i)
+    for (Start::size_type
+             i = 1, n = vecIdx(numRows);
+         i <= n; ++i)
     {
         this->ia_[0] += this->ia_[i];
         this->ia_[i]  = this->ia_[0] - this->ia_[i];
@@ -392,16 +410,22 @@ addConnection(const int    i,
 }
 
 void
-Opm::AssembledConnections::compress()
+Opm::AssembledConnections::compress(const std::size_t numRows)
 {
-    if (conns_.empty() || !conns_.isValid()) {
-        throw std::logic_error("Cannot compress empty or "
-                               "invalid connection list");
+    if (! conns_.isValid()) {
+        throw std::logic_error("Cannot compress invalid "
+                               "connection list");
     }
 
-    csr_.create(conns_);
+    csr_.create(conns_, numRows);
 
     conns_.clear();
+}
+
+Opm::AssembledConnections::Offset
+Opm::AssembledConnections::numRows() const
+{
+    return this->startPointers().size() - 1;
 }
 
 const Opm::AssembledConnections::Start&
