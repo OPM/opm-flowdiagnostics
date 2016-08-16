@@ -21,6 +21,7 @@
 #ifndef OPM_ASSEMBLEDCONNECTIONS_HEADER_INCLUDED
 #define OPM_ASSEMBLEDCONNECTIONS_HEADER_INCLUDED
 
+#include <opm/utility/graph/AssembledConnectionsIteration.hpp>
 #include <vector>
 
 namespace Opm {
@@ -33,16 +34,29 @@ namespace Opm {
 
         void compress();
 
-        using Neighbours = std::vector<int>;
-        using Offset     = Neighbours::size_type;
-        using Start      = std::vector<Offset>;
-        using ConnWeight = std::vector<double>;
+        using Neighbours     = std::vector<int>;
+        using Offset         = Neighbours::size_type;
+        using Start          = std::vector<Offset>;
+        using ConnWeight     = std::vector<double>;
+        using CellNeighbours = SimpleIteratorRange<NeighbourhoodIterator>;
 
         const Start& startPointers() const;
 
         const Neighbours& neighbourhood() const;
 
         const ConnWeight& connectionWeight() const;
+
+        /// Provide a range over a cell neighbourhood.
+        ///
+        /// Example usage:
+        ///    for (auto connection : cellNeighbourhood(cell) {
+        ///        // connection.neigbour contains the neigbouring cell
+        ///        // connection.weight   contains the corresponding connection weight
+        ///     }
+        ///
+        /// This method can only be called if the weight-providing
+        /// overload of addConnection() was used to build the instance.
+        CellNeighbours cellNeighbourhood(const int cell) const;
 
     private:
         class Connections

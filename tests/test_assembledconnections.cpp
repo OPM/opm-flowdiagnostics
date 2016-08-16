@@ -310,6 +310,20 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Single)
 
         check_is_close(w, expect_w);
     }
+
+    {
+        const int num_cells = g.startPointers().size() - 1;
+        int num_conn = 0;
+        double weight_sum = 0.0;
+        for (int cell = 0; cell < num_cells; ++cell) {
+            for (auto conn : g.cellNeighbourhood(cell)) {
+                ++num_conn;
+                weight_sum += conn.weight;
+            }
+        }
+        BOOST_CHECK_EQUAL(num_conn, 4);
+        BOOST_CHECK_CLOSE(weight_sum, -9.9, 1e-10);
+    }
 }
 
 BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
@@ -357,6 +371,20 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
         };
 
         check_is_close(w, expect_w);
+    }
+
+    {
+        const int num_cells = g.startPointers().size() - 1;
+        int num_conn = 0;
+        double weight_sum = 0.0;
+        for (int cell = 0; cell < num_cells; ++cell) {
+            for (auto conn : g.cellNeighbourhood(cell)) {
+                ++num_conn;
+                weight_sum += conn.weight;
+            }
+        }
+        BOOST_CHECK_EQUAL(num_conn, 4);
+        BOOST_CHECK_CLOSE(weight_sum, count*(-9.9), 1e-10);
     }
 }
 

@@ -421,3 +421,14 @@ Opm::AssembledConnections::connectionWeight() const
 {
     return csr_.sa();
 }
+
+Opm::AssembledConnections::CellNeighbours
+Opm::AssembledConnections::cellNeighbourhood(const int cell) const
+{
+    const Offset beg = startPointers()[cell];
+    const Offset end = startPointers()[cell + 1];
+    const int* nb = neighbourhood().data();
+    assert(connectionWeight().size() == neighbourhood().size());
+    const double* w = connectionWeight().data();
+    return CellNeighbours{ {nb + beg, w + beg}, {nb + end, w + end} };
+}
