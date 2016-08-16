@@ -32,7 +32,7 @@
 #include <boost/test/unit_test.hpp>
 #include <opm/common/utility/platform_dependent/reenable_warnings.h>
 
-#include <opm/flowdiagnostics/reorder/tarjan.h>
+#include <opm/utility/graph/tarjan.h>
 
 #include <memory>
 

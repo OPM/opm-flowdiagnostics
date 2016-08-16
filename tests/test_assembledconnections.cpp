@@ -34,7 +34,7 @@
 #include <boost/test/unit_test.hpp>
 #include <opm/common/utility/platform_dependent/reenable_warnings.h>
 
-#include <opm/flowdiagnostics/utility/AssembledConnections.hpp>
+#include <opm/utility/graph/AssembledConnections.hpp>
 
 #include <exception>
 #include <stdexcept>
@@ -62,12 +62,12 @@ BOOST_AUTO_TEST_SUITE(Two_By_Two)
 
 BOOST_AUTO_TEST_CASE (Constructor)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 }
 
 BOOST_AUTO_TEST_CASE (Zero_To_One)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     g.addConnection(0, 1);
 
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE (Zero_To_One)
 
 BOOST_AUTO_TEST_CASE (Zero_To_One_Two)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     g.addConnection(0, 2);
     g.addConnection(0, 1);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two)
 
 BOOST_AUTO_TEST_CASE (Zero_To_One_Two_Duplicate)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     for (auto i = 0, n = 3; i < n; ++i) {
         g.addConnection(0, 2);
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two_Duplicate)
 
 BOOST_AUTO_TEST_CASE (Isolated_Node)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     g.addConnection(2, 0);
     g.addConnection(0, 2);
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE (Isolated_Node)
 
 BOOST_AUTO_TEST_CASE (All_To_All)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     const auto n = 4;
     for (auto i = 0*n; i < n; ++i) {
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE (All_To_All)
 
 BOOST_AUTO_TEST_CASE (All_To_All_Duplicate)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     const auto n = 4;
 
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE (All_To_All_Duplicate)
 
 BOOST_AUTO_TEST_CASE (Weighted_Graph_Single)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     g.addConnection(0, 2,   0.2);
     g.addConnection(0, 1, - 0.1);
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Single)
 
 BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     const auto count = 4;
 
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
 
 BOOST_AUTO_TEST_CASE (Compress_Invalid_Throw)
 {
-    auto g = Opm::Utility::AssembledConnections{};
+    auto g = Opm::AssembledConnections{};
 
     g.addConnection(0, 1);
     g.addConnection(0, 2, 1.0);

@@ -38,15 +38,19 @@
 
 BOOST_AUTO_TEST_SUITE(Connection_Values)
 
+
+using Opm::FlowDiagnostics::ConnectionValues;
+
+
 BOOST_AUTO_TEST_CASE (Constructor)
 {
-    using NConn = Opm::ConnectionValues::NumConnections;
-    using NPhas = Opm::ConnectionValues::NumPhases;
+    using NConn = ConnectionValues::NumConnections;
+    using NPhas = ConnectionValues::NumPhases;
 
     const auto nconn = NConn{4};
     const auto nphas = NPhas{2};
 
-    auto v = Opm::ConnectionValues(nconn, nphas);
+    auto v = ConnectionValues(nconn, nphas);
 
     BOOST_CHECK_EQUAL(v.numPhases()     , nphas.total);
     BOOST_CHECK_EQUAL(v.numConnections(), nconn.total);
@@ -54,16 +58,16 @@ BOOST_AUTO_TEST_CASE (Constructor)
 
 BOOST_AUTO_TEST_CASE (AssignValues)
 {
-    using NConn = Opm::ConnectionValues::NumConnections;
-    using NPhas = Opm::ConnectionValues::NumPhases;
+    using NConn = ConnectionValues::NumConnections;
+    using NPhas = ConnectionValues::NumPhases;
 
     const auto nconn = NConn{4};
     const auto nphas = NPhas{2};
 
-    using ConnID = Opm::ConnectionValues::ConnID;
-    using PhasID = Opm::ConnectionValues::PhaseID;
+    using ConnID = ConnectionValues::ConnID;
+    using PhasID = ConnectionValues::PhaseID;
 
-    auto v = Opm::ConnectionValues(nconn, nphas);
+    auto v = ConnectionValues(nconn, nphas);
 
     {
         for (decltype(v.numConnections())

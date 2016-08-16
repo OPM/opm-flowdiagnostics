@@ -36,22 +36,24 @@
 
 #include <opm/flowdiagnostics/CellSetValues.hpp>
 
+using Opm::FlowDiagnostics::CellSetValues;
+
 BOOST_AUTO_TEST_SUITE(CellSet_Values)
 
 BOOST_AUTO_TEST_CASE (Constructor)
 {
     {
-        Opm::CellSetValues s{};
+        CellSetValues s{};
     }
 
     {
-        auto s = Opm::CellSetValues{ 100 };
+        auto s = CellSetValues{ 100 };
     }
 }
 
 BOOST_AUTO_TEST_CASE (AssignValues)
 {
-    auto s = Opm::CellSetValues{ 100 };
+    auto s = CellSetValues{ 100 };
 
     for (decltype(s.cellValueCount())
              i = 0, n = 100;

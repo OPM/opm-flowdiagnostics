@@ -36,16 +36,18 @@
 
 #include <opm/flowdiagnostics/ConnectivityGraph.hpp>
 
+using Opm::FlowDiagnostics::ConnectivityGraph;
+
 BOOST_AUTO_TEST_SUITE(Two_By_Two)
 
 BOOST_AUTO_TEST_CASE (Constructor)
 {
     const auto g =
-        Opm::ConnectivityGraph(4,
-                               { 0 , 1 ,
-                                 0 , 2 ,
-                                 1 , 3 ,
-                                 2 , 3 });
+        ConnectivityGraph(4,
+                          { 0 , 1 ,
+                            0 , 2 ,
+                            1 , 3 ,
+                            2 , 3 });
 
     BOOST_CHECK_EQUAL(g.numCells(),       4);
     BOOST_CHECK_EQUAL(g.numConnections(), 4);
@@ -54,11 +56,11 @@ BOOST_AUTO_TEST_CASE (Constructor)
 BOOST_AUTO_TEST_CASE (ConnectionList)
 {
     const auto g =
-        Opm::ConnectivityGraph(4,
-                               { 0, 1 ,
-                                 0, 2 ,
-                                 1, 3 ,
-                                 2, 3 });
+        ConnectivityGraph(4,
+                          { 0, 1 ,
+                            0, 2 ,
+                            1, 3 ,
+                            2, 3 });
 
     {
         const auto c = g.connection(0);

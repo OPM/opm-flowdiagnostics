@@ -27,7 +27,13 @@
 #include <exception>
 #include <stdexcept>
 
-Opm::ConnectionValues::
+namespace Opm
+{
+namespace FlowDiagnostics
+{
+
+
+ConnectionValues::
 ConnectionValues(const NumConnections& nconn,
                  const NumPhases&      nphase)
     : nconn_ (nconn)
@@ -36,19 +42,19 @@ ConnectionValues(const NumConnections& nconn,
 {}
 
 std::vector<double>::size_type
-Opm::ConnectionValues::numConnections() const
+ConnectionValues::numConnections() const
 {
     return nconn_.total;
 }
 
 std::size_t
-Opm::ConnectionValues::numPhases() const
+ConnectionValues::numPhases() const
 {
     return nphase_.total;
 }
 
 double
-Opm::ConnectionValues::operator()(const ConnID&  conn,
+ConnectionValues::operator()(const ConnID&  conn,
                                   const PhaseID& phase) const
 {
     if ((conn .id >= nconn_ .total) ||
@@ -61,7 +67,7 @@ Opm::ConnectionValues::operator()(const ConnID&  conn,
 }
 
 double&
-Opm::ConnectionValues::operator()(const ConnID&  conn,
+ConnectionValues::operator()(const ConnID&  conn,
                                   const PhaseID& phase)
 {
     if ((conn .id >= nconn_ .total) ||
@@ -72,3 +78,6 @@ Opm::ConnectionValues::operator()(const ConnID&  conn,
 
     return data_[conn.id*nphase_.total + phase.id];
 }
+
+} // namespace FlowDiagnostics
+} // namespace Opm

@@ -26,6 +26,10 @@
 
 namespace Opm
 {
+namespace FlowDiagnostics
+{
+
+
     class CellSetID
     {
     public:
@@ -62,6 +66,9 @@ namespace Opm
         CellSetID id_;
         IndexSet  iset_;
     };
+
+
+} // namespace FlowDiagnostics
 } // namespace Opm
 
 #endif  // OPM_CELLSET_HEADER_INCLUDED

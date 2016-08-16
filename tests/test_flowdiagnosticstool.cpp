@@ -32,14 +32,16 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <opm/flowdiagnostics/FlowDiagnosticsTool.hpp>
+#include <opm/flowdiagnostics/Toolbox.hpp>
 
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/ConnectionValues.hpp>
 #include <opm/flowdiagnostics/ConnectivityGraph.hpp>
-#include <opm/flowdiagnostics/utility/RandomVector.hpp>
+#include <opm/utility/numeric/RandomVector.hpp>
 
 #include <algorithm>
+
+using namespace Opm::FlowDiagnostics;
 
 namespace
 {
@@ -93,7 +95,7 @@ namespace
     std::vector<double>
     flowField(const std::vector<double>::size_type n)
     {
-        static Opm::Utility::RandomVector genRandom{};
+        static Opm::RandomVector genRandom{};
 
         return genRandom.normal(n);
     }
@@ -106,29 +108,29 @@ public:
     Setup(const std::size_t nx,
           const std::size_t ny);
 
-    const Opm::ConnectivityGraph& connectivity() const;
+    const ConnectivityGraph& connectivity() const;
     const std::vector<double>&    poreVolume()   const;
-    const Opm::ConnectionValues&  flux()         const;
+    const ConnectionValues&  flux()         const;
 
 private:
-    Opm::ConnectivityGraph g_;
+    ConnectivityGraph g_;
     std::vector<double>    pvol_;
-    Opm::ConnectionValues  flux_;
+    ConnectionValues  flux_;
 };
 
 Setup::Setup(const std::size_t nx,
              const std::size_t ny)
     : g_   (nx * ny, internalConnections(nx, ny))
     , pvol_(g_.numCells(), 0.3)
-    , flux_(Opm::ConnectionValues::NumConnections{ g_.numConnections() },
-            Opm::ConnectionValues::NumPhases     { 1 })
+    , flux_(ConnectionValues::NumConnections{ g_.numConnections() },
+            ConnectionValues::NumPhases     { 1 })
 {
     const auto flux = flowField(g_.numConnections());
 
-    using ConnID = Opm::ConnectionValues::ConnID;
+    using ConnID = ConnectionValues::ConnID;
 
     const auto phaseID =
-        Opm::ConnectionValues::PhaseID{ 0 };
+        ConnectionValues::PhaseID{ 0 };
 
     for (decltype(flux_.numConnections())
              conn = 0, nconn = flux_.numConnections();
@@ -138,7 +140,7 @@ Setup::Setup(const std::size_t nx,
     }
 }
 
-const Opm::ConnectivityGraph&
+const ConnectivityGraph&
 Setup::connectivity() const
 {
     return g_;
@@ -150,17 +152,17 @@ Setup::poreVolume() const
     return pvol_;
 }
 
-const Opm::ConnectionValues&
+const ConnectionValues&
 Setup::flux() const
 {
     return flux_;
 }
 
-BOOST_AUTO_TEST_SUITE(FlowDiagnostics_Tool)
+BOOST_AUTO_TEST_SUITE(FlowDiagnostics_Toolbox)
 
 BOOST_AUTO_TEST_CASE (Constructor)
 {
-    using FDT = Opm::FlowDiagnosticsTool;
+    using FDT = Toolbox;
 
     const auto cas = Setup(2, 2);
 
@@ -173,7 +175,7 @@ BOOST_AUTO_TEST_CASE (Constructor)
 
 BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
 {
-    using FDT = Opm::FlowDiagnosticsTool;
+    using FDT = Toolbox;
 
     const auto cas = Setup(2, 2);
 
@@ -183,13 +185,13 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
         .assign(FDT::PoreVolume{ cas.poreVolume() })
         .assign(FDT::ConnectionFlux{ cas.flux() });
 
-    auto start = std::vector<Opm::CellSet>{};
+    auto start = std::vector<CellSet>{};
     {
         start.emplace_back();
 
         auto& s = start.back();
 
-        s.identify(Opm::CellSetID("I-1"));
+        s.identify(CellSetID("I-1"));
         s.insert(0);
     }
 
@@ -198,7 +200,7 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
 
         auto& s = start.back();
 
-        s.identify(Opm::CellSetID("I-2"));
+        s.identify(CellSetID("I-2"));
         s.insert(cas.connectivity().numCells() - 1);
     }
 
@@ -221,7 +223,7 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
         for (const auto& pt : startpts) {
             auto pos =
                 std::find_if(start.begin(), start.end(),
-                    [&pt](const Opm::CellSet& s)
+                    [&pt](const CellSet& s)
                     {
                         return s.id().to_string() == pt.to_string();
                     });
@@ -234,7 +236,7 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
     // Tracer-ToF
     {
         const auto tof = fwd.fd
-            .timeOfFlight(Opm::CellSetID("I-1"));
+            .timeOfFlight(CellSetID("I-1"));
 
         for (decltype(tof.cellValueCount())
                  i = 0, n = tof.cellValueCount();
@@ -251,7 +253,7 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
     // Tracer Concentration
     {
         const auto conc = fwd.fd
-            .concentration(Opm::CellSetID("I-2"));
+            .concentration(CellSetID("I-2"));
 
         BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
                            conc.cellValueCount());

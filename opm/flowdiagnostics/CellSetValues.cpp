@@ -27,28 +27,34 @@
 #include <cassert>
 #include <utility>
 
-Opm::CellSetValues::CellSetValues(const SizeType initialCapacity)
+namespace Opm {
+namespace FlowDiagnostics {
+
+CellSetValues::CellSetValues(const SizeType initialCapacity)
 {
     assoc_.reserve(initialCapacity);
 }
 
 void
-Opm::CellSetValues::addCellValue(const int    cellIndex,
+CellSetValues::addCellValue(const int    cellIndex,
                                  const double cellValue)
 {
     assoc_.push_back(Association{cellIndex, cellValue});
 }
 
-Opm::CellSetValues::SizeType
-Opm::CellSetValues::cellValueCount() const
+CellSetValues::SizeType
+CellSetValues::cellValueCount() const
 {
     return assoc_.size();
 }
 
-Opm::CellSetValues::CellValue
-Opm::CellSetValues::cellValue(const SizeType cellValueIndex) const
+CellSetValues::CellValue
+CellSetValues::cellValue(const SizeType cellValueIndex) const
 {
     const auto& a = assoc_[cellValueIndex];
 
     return { a.index, a.value };
 }
+
+} // namespace FlowDiagnostics
+} // namespace Opm

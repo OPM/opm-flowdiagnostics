@@ -22,7 +22,7 @@
 #include <config.h>
 #endif // HAVE_CONFIG_H
 
-#include <opm/flowdiagnostics/utility/AssembledConnections.hpp>
+#include <opm/utility/graph/AssembledConnections.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -32,11 +32,11 @@
 #include <utility>
 
 // ---------------------------------------------------------------------
-// Class Opm::Utility::AssembledConnections::Connections
+// Class Opm::AssembledConnections::Connections
 // ---------------------------------------------------------------------
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 Connections::add(const int i, const int j)
 {
     i_.push_back(i);
@@ -47,7 +47,7 @@ Connections::add(const int i, const int j)
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 Connections::add(const int i, const int j, const double v)
 {
     this->add(i, j);
@@ -56,7 +56,7 @@ Connections::add(const int i, const int j, const double v)
 }
 
 void
-Opm::Utility::AssembledConnections::Connections::clear()
+Opm::AssembledConnections::Connections::clear()
 {
     WeightVector().swap(v_);
     EntityVector().swap(j_);
@@ -64,56 +64,56 @@ Opm::Utility::AssembledConnections::Connections::clear()
 }
 
 bool
-Opm::Utility::AssembledConnections::Connections::empty() const
+Opm::AssembledConnections::Connections::empty() const
 {
     return i_.empty();
 }
 
 bool
-Opm::Utility::AssembledConnections::Connections::isValid() const
+Opm::AssembledConnections::Connections::isValid() const
 {
     return (i_.size() == j_.size())
         && (v_.empty() || (v_.size() == i_.size()));
 }
 
 bool
-Opm::Utility::AssembledConnections::Connections::isWeighted() const
+Opm::AssembledConnections::Connections::isWeighted() const
 {
     return ! v_.empty();
 }
 
 int
-Opm::Utility::AssembledConnections::Connections::maxRow() const
+Opm::AssembledConnections::Connections::maxRow() const
 {
     return max_i_;
 }
 
 int
-Opm::Utility::AssembledConnections::Connections::maxCol() const
+Opm::AssembledConnections::Connections::maxCol() const
 {
     return max_j_;
 }
 
-Opm::Utility::AssembledConnections::Connections::EntityVector::size_type
-Opm::Utility::AssembledConnections::Connections::nnz() const
+Opm::AssembledConnections::Connections::EntityVector::size_type
+Opm::AssembledConnections::Connections::nnz() const
 {
     return i_.size();
 }
 
-const Opm::Utility::AssembledConnections::Connections::EntityVector&
-Opm::Utility::AssembledConnections::Connections::i() const
+const Opm::AssembledConnections::Connections::EntityVector&
+Opm::AssembledConnections::Connections::i() const
 {
     return i_;
 }
 
-const Opm::Utility::AssembledConnections::Connections::EntityVector&
-Opm::Utility::AssembledConnections::Connections::j() const
+const Opm::AssembledConnections::Connections::EntityVector&
+Opm::AssembledConnections::Connections::j() const
 {
     return j_;
 }
 
-const Opm::Utility::AssembledConnections::Connections::WeightVector&
-Opm::Utility::AssembledConnections::Connections::v() const
+const Opm::AssembledConnections::Connections::WeightVector&
+Opm::AssembledConnections::Connections::v() const
 {
     return v_;
 }
@@ -121,11 +121,11 @@ Opm::Utility::AssembledConnections::Connections::v() const
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// Class Opm::Utility::AssembledConnections::CSR
+// Class Opm::AssembledConnections::CSR
 // ---------------------------------------------------------------------
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::create(const Connections& conns)
 {
     assert (!conns.empty() && conns.isValid());
@@ -142,26 +142,26 @@ CSR::create(const Connections& conns)
     }
 }
 
-const Opm::Utility::AssembledConnections::Start&
-Opm::Utility::AssembledConnections::CSR::ia() const
+const Opm::AssembledConnections::Start&
+Opm::AssembledConnections::CSR::ia() const
 {
     return ia_;
 }
 
-const Opm::Utility::AssembledConnections::Neighbours&
-Opm::Utility::AssembledConnections::CSR::ja() const
+const Opm::AssembledConnections::Neighbours&
+Opm::AssembledConnections::CSR::ja() const
 {
     return ja_;
 }
 
-const Opm::Utility::AssembledConnections::ConnWeight&
-Opm::Utility::AssembledConnections::CSR::sa() const
+const Opm::AssembledConnections::ConnWeight&
+Opm::AssembledConnections::CSR::sa() const
 {
     return sa_;
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::assemble(const Connections& conns)
 {
     {
@@ -177,7 +177,7 @@ CSR::assemble(const Connections& conns)
 }
 
 void
-Opm::Utility::AssembledConnections::CSR::sort()
+Opm::AssembledConnections::CSR::sort()
 {
     // Transposition is, effectively, a linear time bucket insert, so
     // transposing the structure twice creates a structure with colum
@@ -188,7 +188,7 @@ Opm::Utility::AssembledConnections::CSR::sort()
 }
 
 void
-Opm::Utility::AssembledConnections::CSR::condenseDuplicates()
+Opm::AssembledConnections::CSR::condenseDuplicates()
 {
     // Note: Must be called *after* sort().
 
@@ -221,7 +221,7 @@ Opm::Utility::AssembledConnections::CSR::condenseDuplicates()
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::accumulateConnWeights(const std::vector<double>& v)
 {
     if (v.size() != this->elmIdx_.size()) {
@@ -240,7 +240,7 @@ CSR::accumulateConnWeights(const std::vector<double>& v)
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::accumulateRowEntries(const int               numRows,
                           const std::vector<int>& rowIdx)
 {
@@ -264,7 +264,7 @@ CSR::accumulateRowEntries(const int               numRows,
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::createGraph(const std::vector<int>& rowIdx,
                  const std::vector<int>& colIdx)
 {
@@ -295,7 +295,7 @@ CSR::createGraph(const std::vector<int>& rowIdx,
 }
 
 void
-Opm::Utility::AssembledConnections::CSR::transpose()
+Opm::AssembledConnections::CSR::transpose()
 {
     auto elmIdx = this->elmIdx_;
 
@@ -314,7 +314,7 @@ Opm::Utility::AssembledConnections::CSR::transpose()
 }
 
 std::vector<int>
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::expandStartPointers() const
 {
     auto rowIdx = std::vector<int>{};
@@ -334,7 +334,7 @@ CSR::expandStartPointers() const
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 CSR::unique(Neighbours::const_iterator begin,
             Neighbours::const_iterator end)
 {
@@ -359,7 +359,7 @@ CSR::unique(Neighbours::const_iterator begin,
 }
 
 void
-Opm::Utility::AssembledConnections::CSR::remapElementIndex(Start&& elmIdx)
+Opm::AssembledConnections::CSR::remapElementIndex(Start&& elmIdx)
 {
     for (auto& i : elmIdx) {
         i = this->elmIdx_[i];
@@ -371,11 +371,11 @@ Opm::Utility::AssembledConnections::CSR::remapElementIndex(Start&& elmIdx)
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// Class Opm::Utility::AssembledConnections
+// Class Opm::AssembledConnections
 // ---------------------------------------------------------------------
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 addConnection(const int i,
               const int j)
 {
@@ -383,7 +383,7 @@ addConnection(const int i,
 }
 
 void
-Opm::Utility::AssembledConnections::
+Opm::AssembledConnections::
 addConnection(const int    i,
               const int    j,
               const double v)
@@ -392,7 +392,7 @@ addConnection(const int    i,
 }
 
 void
-Opm::Utility::AssembledConnections::compress()
+Opm::AssembledConnections::compress()
 {
     if (conns_.empty() || !conns_.isValid()) {
         throw std::logic_error("Cannot compress empty or "
@@ -404,20 +404,20 @@ Opm::Utility::AssembledConnections::compress()
     conns_.clear();
 }
 
-const Opm::Utility::AssembledConnections::Start&
-Opm::Utility::AssembledConnections::startPointers() const
+const Opm::AssembledConnections::Start&
+Opm::AssembledConnections::startPointers() const
 {
     return csr_.ia();
 }
 
-const Opm::Utility::AssembledConnections::Neighbours&
-Opm::Utility::AssembledConnections::neighbourhood() const
+const Opm::AssembledConnections::Neighbours&
+Opm::AssembledConnections::neighbourhood() const
 {
     return csr_.ja();
 }
 
-const Opm::Utility::AssembledConnections::ConnWeight&
-Opm::Utility::AssembledConnections::connectionWeight() const
+const Opm::AssembledConnections::ConnWeight&
+Opm::AssembledConnections::connectionWeight() const
 {
     return csr_.sa();
 }

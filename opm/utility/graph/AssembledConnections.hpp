@@ -23,7 +23,7 @@
 
 #include <vector>
 
-namespace Opm { namespace Utility {
+namespace Opm {
 
     class AssembledConnections
     {
@@ -139,6 +139,6 @@ namespace Opm { namespace Utility {
         CSR         csr_;
     };
 
-}} // namespace Opm::Utility
+} // namespace Opm
 
 #endif // OPM_ASSEMBLEDCONNECTIONS_HEADER_INCLUDED

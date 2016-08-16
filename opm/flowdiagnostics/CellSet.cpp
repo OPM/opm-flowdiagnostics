@@ -26,16 +26,22 @@
 
 #include <utility>
 
-Opm::CellSetID::CellSetID()
+namespace Opm
+{
+namespace FlowDiagnostics
+{
+
+
+CellSetID::CellSetID()
 {}
 
-Opm::CellSetID::CellSetID(Repr id)
+CellSetID::CellSetID(Repr id)
     : id_(std::move(id))
 {
 }
 
 std::string
-Opm::CellSetID::to_string() const
+CellSetID::to_string() const
 {
     return id_;
 }
@@ -43,31 +49,34 @@ Opm::CellSetID::to_string() const
 // =====================================================================
 
 void
-Opm::CellSet::identify(CellSetID id)
+CellSet::identify(CellSetID id)
 {
     id_ = std::move(id);
 }
 
-const Opm::CellSetID&
-Opm::CellSet::id() const
+const CellSetID&
+CellSet::id() const
 {
     return id_;
 }
 
 void
-Opm::CellSet::insert(const int i)
+CellSet::insert(const int i)
 {
     iset_.insert(i);
 }
 
-Opm::CellSet::const_iterator
-Opm::CellSet::begin() const
+CellSet::const_iterator
+CellSet::begin() const
 {
     return iset_.begin();
 }
 
-Opm::CellSet::const_iterator
-Opm::CellSet::end() const
+CellSet::const_iterator
+CellSet::end() const
 {
     return iset_.end();
 }
+
+} // namespace FlowDiagnostics
+} // namespace Opm
