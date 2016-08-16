@@ -220,6 +220,12 @@ private:
 
     std::vector<double> pvol_;
     ConnectionValues    flux_;
+
+    AssembledConnections inj_conn_;
+    AssembledConnections prod_conn_;
+    bool conn_built_ = false;
+
+    void buildAssembledConnections();
 };
 
 Toolbox::Impl::Impl(ConnectivityGraph g)
@@ -249,11 +255,16 @@ Toolbox::Impl::assign(const ConnectionFlux& flux)
     }
 
     flux_ = flux.data;
+    conn_built_ = false;
 }
 
 Toolbox::Forward
 Toolbox::Impl::injDiag(const StartCells& start)
 {
+    if (!conn_built_) {
+        buildAssembledConnections();
+    }
+
     using SampleSize = RandomVector::Size;
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
@@ -263,7 +274,7 @@ Toolbox::Impl::injDiag(const StartCells& start)
 
     SolnPtr x(new Soln());
 
-    TracerTofSolver solver(g_, pvol_, flux_);
+    TracerTofSolver solver(inj_conn_, pvol_);
     x->assignToF(solver.solveGlobal(start.points));
 
     for (const auto& pt : start.points) {
@@ -278,6 +289,10 @@ Toolbox::Impl::injDiag(const StartCells& start)
 Toolbox::Reverse
 Toolbox::Impl::prodDiag(const StartCells& start)
 {
+    if (!conn_built_) {
+        buildAssembledConnections();
+    }
+
     using SampleSize = RandomVector::Size;
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
@@ -327,6 +342,33 @@ Toolbox::Impl::prodDiag(const StartCells& start)
     }
 
     return Reverse{ Solution(std::move(x)) };
+}
+
+void
+Toolbox::Impl::buildAssembledConnections()
+{
+    // Create the data structures needed by the tracer/tof solver.
+    const size_t num_connections = g_.numConnections();
+    inj_conn_ = AssembledConnections();
+    prod_conn_ = AssembledConnections();
+    for (size_t conn_idx = 0; conn_idx < num_connections; ++conn_idx) {
+        auto cells = g_.connection(conn_idx);
+        using ConnID = ConnectionValues::ConnID;
+        using PhaseID = ConnectionValues::PhaseID;
+        const double connection_flux = flux_(ConnID{conn_idx}, PhaseID{0});
+        if (connection_flux > 0.0) {
+            inj_conn_.addConnection(cells.first, cells.second, connection_flux);
+            prod_conn_.addConnection(cells.second, cells.first, connection_flux);
+        } else {
+            inj_conn_.addConnection(cells.second, cells.first, -connection_flux);
+            prod_conn_.addConnection(cells.first, cells.second, -connection_flux);
+        }
+    }
+    inj_conn_.compress();
+    prod_conn_.compress();
+
+    // Mark as built (until flux changed).
+    conn_built_ = true;
 }
 
 // =====================================================================
