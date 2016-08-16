@@ -25,15 +25,32 @@
 #include <opm/utility/graph/AssembledConnections.hpp>
 #include <cassert>
 #include <iostream>
+#include <stdexcept>
 
 namespace Opm
 {
 namespace FlowDiagnostics
 {
 
+
+    /// Class for solving the tracer and time-of-flight equations.
+    ///
+    /// Implements a first-order finite volume solver for
+    /// (single-phase) time-of-flight using reordering.
+    /// The equation solved is:
+    ///     \f[v \cdot \nabla\tau = \phi\f]
+    /// in which \f$ v \f$ is the fluid velocity, \f$ \tau \f$ is time-of-flight and
+    /// \f$ \phi \f$ is the porosity. This is a boundary value problem, and
+    /// \f$ \tau \f$ is considered zero on all inflow boundaries (or well inflows).
+    ///
+    /// The tracer equation is the same, except for the right hand side which is zero
+    /// instead of \f[\phi\f].
     class TracerTofSolver
     {
     public:
+        /// Initialize solver with a given flow graph (a weighted,
+        /// directed asyclic graph) containing the out-fluxes from
+        /// each cell, and pore volumes.
         TracerTofSolver(const AssembledConnections& graph,
                         const std::vector<double>& pore_volumes)
             : g_(graph),
@@ -41,9 +58,16 @@ namespace FlowDiagnostics
         {
         }
 
+
+
+        /// Compute the global (combining all sources) time-of-flight of each cell.
+        ///
+        /// TODO: also compute tracer solution.
         std::vector<double> solveGlobal(const std::vector<CellSet>& all_startsets)
         {
-            static_cast<void>(all_startsets);
+            static_cast<void>(all_startsets); // TODO: use to compute tracer.
+
+            // Reset instance variables.
             const int num_cells = pv_.size();
             upwind_influx_.clear();
             upwind_influx_.resize(num_cells, 0.0);
@@ -51,7 +75,14 @@ namespace FlowDiagnostics
             upwind_contrib_.resize(num_cells, 0.0);
             tof_.clear();
             tof_.resize(num_cells, -1e100);
+            num_multicell_ = 0;
+            max_size_multicell_ = 0;
+            max_iter_multicell_ = 0;
+
+            // Compute topological ordering.
             computeOrdering();
+
+            // Solve each component.
             const int num_components = component_starts_.size() - 1;
             for (int comp = 0; comp < num_components; ++comp) {
                 const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
@@ -61,21 +92,52 @@ namespace FlowDiagnostics
                     solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
                 }
             }
+
+            // Return computed time-of-flight.
             return tof_;
         }
 
+
+
+        /// Output data struct for solveLocal().
         struct LocalSolution {
             CellSetValues tof;
             CellSetValues concentration;
         };
 
+
+
+        /// Compute a local solution tracer and time-of-flight solution.
+        ///
+        /// Local means that only cells downwind from he startset are considered.
+        /// The solution is therefore potentially sparse.
+        /// TODO: not implemented!
         LocalSolution solveLocal(const CellSet& startset)
         {
             static_cast<void>(startset);
             return LocalSolution{ CellSetValues{}, CellSetValues{} };
         }
 
+
+
     private:
+
+        // --------------  Private data members --------------
+
+        const AssembledConnections& g_;
+        const std::vector<double>& pv_;
+        std::vector<int> sequence_;
+        std::vector<int> component_starts_;
+        std::vector<double> upwind_influx_;
+        std::vector<double> upwind_contrib_;
+        std::vector<double> tof_;
+        int num_multicell_ = 0;
+        int max_size_multicell_ = 0;
+        int max_iter_multicell_ = 0;
+        const double gauss_seidel_tol_ = 1e-3;
+
+        // --------------  Private methods --------------
+
         void computeOrdering()
         {
             // We might have to pad the start pointers if the last
@@ -91,14 +153,13 @@ namespace FlowDiagnostics
 
             // Compute reverse topological ordering.
             struct Deleter { void operator()(TarjanSCCResult* x) { destroy_tarjan_sccresult(x); } };
-            std::unique_ptr<TarjanSCCResult, Deleter> result(tarjan(num_cells,
-                                                                    sp.data(),
-                                                                    g_.neighbourhood().data()));
+            std::unique_ptr<TarjanSCCResult, Deleter>
+                result(tarjan(num_cells, sp.data(), g_.neighbourhood().data()));
 
             // Must reverse ordering, since Tarjan computes reverse ordering.
             const int ok = tarjan_reverse_sccresult(result.get());
             if (!ok) {
-                throw std::runtime_error("Failed to reverse ordering.");
+                throw std::runtime_error("Failed to reverse topological ordering in TracerTofSolver::computeOrdering()");
             }
 
             // Extract data from solution.
@@ -113,6 +174,8 @@ namespace FlowDiagnostics
             }
             assert(component_starts_.back() == int(num_cells));
         }
+
+
 
         void solveSingleCell(const int cell)
         {
@@ -156,19 +219,29 @@ namespace FlowDiagnostics
         }
 
 
-        void solveMultiCell(const int size, const int* cells)
-        {
-            static_cast<void>(size);
-            static_cast<void>(cells);
-        }
 
-        const AssembledConnections& g_;
-        const std::vector<double>& pv_;
-        std::vector<int> sequence_;
-        std::vector<int> component_starts_;
-        std::vector<double> upwind_influx_;
-        std::vector<double> upwind_contrib_;
-        std::vector<double> tof_;
+        void solveMultiCell(const int num_cells, const int* cells)
+        {
+            ++num_multicell_;
+            max_size_multicell_ = std::max(max_size_multicell_, num_cells);
+            // std::cout << "Multiblock solve with " << num_cells << " cells." << std::endl;
+
+            // Using a Gauss-Seidel approach.
+            double max_delta = 1e100;
+            int num_iter = 0;
+            while (max_delta > gauss_seidel_tol_) {
+                max_delta = 0.0;
+                ++num_iter;
+                for (int ci = 0; ci < num_cells; ++ci) {
+                    const int cell = cells[ci];
+                    const double tof_before = tof_[cell];
+                    solveSingleCell(cell);
+                    max_delta = std::max(max_delta, std::fabs(tof_[cell] - tof_before));
+                }
+                // std::cout << "Max delta = " << max_delta << std::endl;
+            }
+            max_iter_multicell_ = std::max(max_iter_multicell_, num_iter);
+        }
     };
 
 } // namespace FlowDiagnostics
