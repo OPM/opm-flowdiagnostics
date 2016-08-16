@@ -26,14 +26,35 @@
 #include <cstddef>
 #include <vector>
 
+/// \file
+///
+/// Facility for converting collection of entity pairs or weighted entity
+/// triplets into a sparse (CSR) adjacency matrix representation of a graph.
+/// Supports O(nnz) compression and, if applicable, accumulation of weight
+/// values for repeated entity pairs.
+
 namespace Opm {
 
+    /// Form CSR adjacency matrix representation of graph provided as a list
+    /// of connections between entities, possibly including edge weights.
     class AssembledConnections
     {
     public:
+        /// Add connection between entities.
+        ///
+        /// \param[in] i Primary (source) entity.  Used as row index.
+        ///
+        /// \param[in] j Secondary (sink) entity.  Used as column index.
         void addConnection(const int i, const int j);
-        void addConnection(const int i, const int j, const double v);
 
+        /// Add weighted connection between entities.
+        ///
+        /// \param[in] i Primary (source) entity.  Used as row index.
+        ///
+        /// \param[in] j Secondary (sink) entity.  Used as column index.
+        ///
+        /// \param[in] v Edge weight associated to connection.
+        void addConnection(const int i, const int j, const double v);
 
         /// Form CSR adjacency matrix representation of input graph from
         /// connections established in previous calls to addConnection().
@@ -53,10 +74,20 @@ namespace Opm {
         ///     compress() will throw \code std::invalid_argument \endcode.
         void compress(const std::size_t numRows);
 
-        using Neighbours     = std::vector<int>;
-        using Offset         = Neighbours::size_type;
-        using Start          = std::vector<Offset>;
-        using ConnWeight     = std::vector<double>;
+        /// Representation of neighbouring entities.
+        using Neighbours = std::vector<int>;
+
+        /// Offset into neighbour array.
+        using Offset = Neighbours::size_type;
+
+        /// CSR start pointers.
+        using Start = std::vector<Offset>;
+
+        /// Aggregate connection weights
+        using ConnWeight = std::vector<double>;
+
+        /// Range of neighbours connected to a particular entity.  Includes
+        /// edge weights.
         using CellNeighbours = SimpleIteratorRange<NeighbourhoodIterator>;
 
         /// Retrieve number of rows (source entities) in input graph.
@@ -64,19 +95,39 @@ namespace Opm {
         /// only after calling compress().
         Offset numRows() const;
 
+        /// Retrieve raw CSR start pointers pertaining to current input
+        /// graph.  Only valid after compress() is called.
         const Start& startPointers() const;
 
+        /// Retrieve raw CSR column indices pertaining to current input
+        /// graph.  Only valid after compress() is called.  The neighbours
+        /// of entity \c i are
+        ///
+        ///   \code
+        ///     neighbourhood()[startPointers()[i + 0]] ...
+        ///     neighbourhood()[startPointers()[i + 1] - 1]
+        ///   \endcode
         const Neighbours& neighbourhood() const;
 
+        /// Retrieve accumulated connection weights for each aggregate
+        /// neighbour relation in the adjacency matrix.  Only valid if the
+        /// input graph is specified in terms of explicit edge weights
+        /// (\code addConnection(i,j,v) \endcode).
+        ///
+        /// Weights have the same ordering as the neighbours represented by
+        /// neighbourhood().
         const ConnWeight& connectionWeight() const;
 
         /// Provide a range over a cell neighbourhood.
         ///
         /// Example usage:
+        ///
+        /// \code
         ///    for (const auto& connection : cellNeighbourhood(cell) {
-        ///        // connection.neigbour contains the neigbouring cell
-        ///        // connection.weight   contains the corresponding connection weight
+        ///        // connection.neigbour is the neigbouring cell
+        ///        // connection.weight   is the corresponding connection weight
         ///     }
+        /// \endcode
         ///
         /// This method can only be called if the weight-providing
         /// overload of addConnection() was used to build the instance.
