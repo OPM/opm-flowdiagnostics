@@ -300,29 +300,29 @@ namespace {
 
 BOOST_AUTO_TEST_CASE (OneDimCase)
 {
-    using FDT = Opm::FlowDiagnosticsTool;
+    using namespace Opm::FlowDiagnostics;
 
     const auto cas = Setup(5, 1);
     const auto& graph = cas.connectivity();
 
-    FDT diagTool(graph);
+    Toolbox diagTool(graph);
 
-    diagTool.assign(FDT::PoreVolume{ cas.poreVolume() });
-    Opm::ConnectionValues flux(Opm::ConnectionValues::NumConnections{ graph.numConnections() },
-                               Opm::ConnectionValues::NumPhases     { 1 });
+    diagTool.assign(Toolbox::PoreVolume{ cas.poreVolume() });
+    ConnectionValues flux(ConnectionValues::NumConnections{ graph.numConnections() },
+                          ConnectionValues::NumPhases     { 1 });
     const size_t nconn = cas.connectivity().numConnections();
     for (size_t conn = 0; conn < nconn; ++conn) {
-        flux(Opm::ConnectionValues::ConnID{conn}, Opm::ConnectionValues::PhaseID{0}) = 0.3;
+        flux(ConnectionValues::ConnID{conn}, ConnectionValues::PhaseID{0}) = 0.3;
     }
-    diagTool.assign(FDT::ConnectionFlux{ flux });
+    diagTool.assign(Toolbox::ConnectionFlux{ flux });
 
-    auto start = std::vector<Opm::CellSet>{};
+    auto start = std::vector<CellSet>{};
     {
         start.emplace_back();
 
         auto& s = start.back();
 
-        s.identify(Opm::CellSetID("I-1"));
+        s.identify(CellSetID("I-1"));
         s.insert(0);
     }
 
@@ -331,12 +331,12 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
 
         auto& s = start.back();
 
-        s.identify(Opm::CellSetID("I-2"));
+        s.identify(CellSetID("I-2"));
         s.insert(cas.connectivity().numCells() - 1);
     }
 
     const auto fwd = diagTool
-        .computeInjectionDiagnostics(FDT::StartCells{start});
+        .computeInjectionDiagnostics(Toolbox::StartCells{start});
 
     // Global ToF field (accumulated from all injectors)
     {
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         for (const auto& pt : startpts) {
             auto pos =
                 std::find_if(start.begin(), start.end(),
-                    [&pt](const Opm::CellSet& s)
+                    [&pt](const CellSet& s)
                     {
                         return s.id().to_string() == pt.to_string();
                     });
@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     // Tracer-ToF
     {
         const auto tof = fwd.fd
-            .timeOfFlight(Opm::CellSetID("I-1"));
+            .timeOfFlight(CellSetID("I-1"));
 
         for (decltype(tof.cellValueCount())
                  i = 0, n = tof.cellValueCount();
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     // Tracer Concentration
     {
         const auto conc = fwd.fd
-            .concentration(Opm::CellSetID("I-2"));
+            .concentration(CellSetID("I-2"));
 
         BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
                            conc.cellValueCount());

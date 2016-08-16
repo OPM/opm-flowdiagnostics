@@ -20,13 +20,15 @@
 #ifndef OPM_TRACERTOFSOLVER_HEADER_INCLUDED
 #define OPM_TRACERTOFSOLVER_HEADER_INCLUDED
 
-#include <opm/flowdiagnostics/FlowDiagnosticsTool.hpp>
-#include <opm/flowdiagnostics/reorder/tarjan.h>
-#include <opm/flowdiagnostics/utility/AssembledConnections.hpp>
+#include <opm/flowdiagnostics/Toolbox.hpp>
+#include <opm/utility/graph/tarjan.h>
+#include <opm/utility/graph/AssembledConnections.hpp>
 #include <cassert>
 #include <iostream>
 
 namespace Opm
+{
+namespace FlowDiagnostics
 {
 
     class TracerTofSolver
@@ -80,7 +82,7 @@ namespace Opm
             // Create the data structure needed for Tarjan's algorithm.
             const size_t num_cells = g_.numCells();
             const size_t num_connections = g_.numConnections();
-            assembled_conn_ = Utility::AssembledConnections();
+            assembled_conn_ = AssembledConnections();
             for (size_t conn_idx = 0; conn_idx < num_connections; ++conn_idx) {
                 auto cells = g_.connection(conn_idx);
                 const double connection_flux = flux_(ConnectionValues::ConnID{conn_idx},
@@ -180,7 +182,7 @@ namespace Opm
         const ConnectivityGraph& g_;
         const std::vector<double>& pv_;
         const ConnectionValues& flux_;
-        Utility::AssembledConnections assembled_conn_;
+        AssembledConnections assembled_conn_;
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
         std::vector<double> upwind_influx_;
@@ -188,6 +190,7 @@ namespace Opm
         std::vector<double> tof_;
     };
 
+} // namespace FlowDiagnostics
 } // namespace Opm
 
 #endif // OPM_TRACERTOFSOLVER_HEADER_INCLUDED
