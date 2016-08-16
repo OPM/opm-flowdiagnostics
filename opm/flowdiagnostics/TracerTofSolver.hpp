@@ -136,9 +136,8 @@ namespace FlowDiagnostics
             double downwind_flux = 0.0;
             const auto& sp = assembled_conn_.startPointers();
             if (cell < int(sp.size()) - 1) { // TODO: remove test when CRS from AC valid.
-                for (size_t connection_index = sp[cell]; connection_index < sp[cell + 1]; ++connection_index) {
-                    const double flux = assembled_conn_.connectionWeight()[connection_index];
-                    downwind_flux += flux;
+                for (const auto& conn : assembled_conn_.cellNeighbourhood(cell)) {
+                    downwind_flux += conn.weight;
                 }
             }
 
@@ -163,9 +162,9 @@ namespace FlowDiagnostics
 
             // Set contribution for my downwind cells (if any).
             if (cell < int(sp.size()) - 1) { // TODO: remove test when CRS from AC valid.
-                for (size_t connection_index = sp[cell]; connection_index < sp[cell + 1]; ++connection_index) {
-                    const int downwind_cell = assembled_conn_.neighbourhood()[connection_index];
-                    const double flux = assembled_conn_.connectionWeight()[connection_index];
+                for (const auto& conn : assembled_conn_.cellNeighbourhood(cell)) {
+                    const int downwind_cell = conn.neighbour;
+                    const double flux = conn.weight;
                     upwind_influx_[downwind_cell] += flux;
                     upwind_contrib_[downwind_cell] += tof_[cell] * flux;
                 }
