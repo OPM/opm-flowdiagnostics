@@ -422,6 +422,12 @@ Opm::AssembledConnections::compress(const std::size_t numRows)
     conns_.clear();
 }
 
+Opm::AssembledConnections::Offset
+Opm::AssembledConnections::numRows() const
+{
+    return this->startPointers().size() - 1;
+}
+
 const Opm::AssembledConnections::Start&
 Opm::AssembledConnections::startPointers() const
 {

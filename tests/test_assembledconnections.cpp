@@ -73,6 +73,8 @@ BOOST_AUTO_TEST_CASE (Zero_To_One)
 
     g.compress(4);
 
+    BOOST_CHECK_EQUAL(g.numRows(), 4);
+
     {
         const auto start = g.startPointers();
 
@@ -100,6 +102,8 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two)
     g.addConnection(0, 1);
 
     g.compress(4);
+
+    BOOST_CHECK_EQUAL(g.numRows(), 4);
 
     {
         const auto start = g.startPointers();
@@ -140,6 +144,8 @@ BOOST_AUTO_TEST_CASE (Zero_To_One_Two_Duplicate)
 
     g.compress(4);
 
+    BOOST_CHECK_EQUAL(g.numRows(), 4);
+
     {
         const auto start = g.startPointers();
 
@@ -173,6 +179,8 @@ BOOST_AUTO_TEST_CASE (No_Out_Edge_From_High_Vertex)
     g.addConnection(2, 3, 1.0);
 
     g.compress(4);
+
+    BOOST_CHECK_EQUAL(g.numRows(), 4);
 
     {
         const auto start = g.startPointers();
@@ -228,6 +236,8 @@ BOOST_AUTO_TEST_CASE (Isolated_Node)
 
     g.compress(3);
 
+    BOOST_CHECK_EQUAL(g.numRows(), 3);
+
     {
         const auto start = g.startPointers();
 
@@ -259,6 +269,8 @@ BOOST_AUTO_TEST_CASE (All_To_All)
     }
 
     g.compress(n);
+
+    BOOST_CHECK_EQUAL(g.numRows(), n);
 
     {
         const auto start = g.startPointers();
@@ -303,6 +315,8 @@ BOOST_AUTO_TEST_CASE (All_To_All_Duplicate)
 
     g.compress(n);
 
+    BOOST_CHECK_EQUAL(g.numRows(), n);
+
     {
         const auto start = g.startPointers();
 
@@ -339,6 +353,8 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Single)
     g.addConnection(2, 3, -23.0);
 
     g.compress(4);
+
+    BOOST_CHECK_EQUAL(g.numRows(), 4);
 
     {
         const auto start = g.startPointers();
@@ -401,6 +417,8 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
     }
 
     g.compress(4);
+
+    BOOST_CHECK_EQUAL(g.numRows(), 4);
 
     {
         const auto start = g.startPointers();

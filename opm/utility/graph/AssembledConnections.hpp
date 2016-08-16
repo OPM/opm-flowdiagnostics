@@ -59,6 +59,11 @@ namespace Opm {
         using ConnWeight     = std::vector<double>;
         using CellNeighbours = SimpleIteratorRange<NeighbourhoodIterator>;
 
+        /// Retrieve number of rows (source entities) in input graph.
+        /// Corresponds to value of argument passed to compress().  Valid
+        /// only after calling compress().
+        Offset numRows() const;
+
         const Start& startPointers() const;
 
         const Neighbours& neighbourhood() const;
