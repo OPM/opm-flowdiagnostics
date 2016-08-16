@@ -312,8 +312,9 @@ Toolbox::Impl::buildAssembledConnections()
             prod_conn_.addConnection(cells.first, cells.second, -connection_flux);
         }
     }
-    inj_conn_.compress();
-    prod_conn_.compress();
+    const int num_cells = g_.numCells();
+    inj_conn_.compress(num_cells);
+    prod_conn_.compress(num_cells);
 
     // Mark as built (until flux changed).
     conn_built_ = true;
