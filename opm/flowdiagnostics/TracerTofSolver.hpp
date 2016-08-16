@@ -140,21 +140,12 @@ namespace FlowDiagnostics
 
         void computeOrdering()
         {
-            // We might have to pad the start pointers if the last
-            // cell(s) did not have outgoing fluxes, to get the
-            // traditional format expected by tarjan().
-            const size_t num_cells = pv_.size();
-            auto sp = g_.startPointers();
-            if (sp.size() != num_cells + 1) {
-                assert(sp.size() < num_cells + 1);
-                sp.insert(sp.end(), num_cells + 1 - sp.size(), sp.back());
-            }
-            assert(sp.size() == num_cells + 1);
-
             // Compute reverse topological ordering.
+            const size_t num_cells = pv_.size();
+            assert(g_.startPointers().size() == num_cells + 1);
             struct Deleter { void operator()(TarjanSCCResult* x) { destroy_tarjan_sccresult(x); } };
             std::unique_ptr<TarjanSCCResult, Deleter>
-                result(tarjan(num_cells, sp.data(), g_.neighbourhood().data()));
+                result(tarjan(num_cells, g_.startPointers().data(), g_.neighbourhood().data()));
 
             // Must reverse ordering, since Tarjan computes reverse ordering.
             const int ok = tarjan_reverse_sccresult(result.get());
@@ -181,11 +172,8 @@ namespace FlowDiagnostics
         {
             // Compute downwind fluxes.
             double downwind_flux = 0.0;
-            const auto& sp = g_.startPointers();
-            if (cell < int(sp.size()) - 1) { // TODO: remove test when CRS from AC valid.
-                for (const auto& conn : g_.cellNeighbourhood(cell)) {
-                    downwind_flux += conn.weight;
-                }
+            for (const auto& conn : g_.cellNeighbourhood(cell)) {
+                downwind_flux += conn.weight;
             }
 
             // If source cell, we have influx not accounted for, and
@@ -208,13 +196,11 @@ namespace FlowDiagnostics
             }
 
             // Set contribution for my downwind cells (if any).
-            if (cell < int(sp.size()) - 1) { // TODO: remove test when CRS from AC valid.
-                for (const auto& conn : g_.cellNeighbourhood(cell)) {
-                    const int downwind_cell = conn.neighbour;
-                    const double flux = conn.weight;
-                    upwind_influx_[downwind_cell] += flux;
-                    upwind_contrib_[downwind_cell] += tof_[cell] * flux;
-                }
+            for (const auto& conn : g_.cellNeighbourhood(cell)) {
+                const int downwind_cell = conn.neighbour;
+                const double flux = conn.weight;
+                upwind_influx_[downwind_cell] += flux;
+                upwind_contrib_[downwind_cell] += tof_[cell] * flux;
             }
         }
 
