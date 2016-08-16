@@ -49,7 +49,7 @@ namespace Opm {
         /// Provide a range over a cell neighbourhood.
         ///
         /// Example usage:
-        ///    for (auto connection : cellNeighbourhood(cell) {
+        ///    for (const auto& connection : cellNeighbourhood(cell) {
         ///        // connection.neigbour contains the neigbouring cell
         ///        // connection.weight   contains the corresponding connection weight
         ///     }

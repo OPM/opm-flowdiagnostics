@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Single)
         int num_conn = 0;
         double weight_sum = 0.0;
         for (int cell = 0; cell < num_cells; ++cell) {
-            for (auto conn : g.cellNeighbourhood(cell)) {
+            for (const auto& conn : g.cellNeighbourhood(cell)) {
                 ++num_conn;
                 weight_sum += conn.weight;
             }
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE (Weighted_Graph_Multiple)
         int num_conn = 0;
         double weight_sum = 0.0;
         for (int cell = 0; cell < num_cells; ++cell) {
-            for (auto conn : g.cellNeighbourhood(cell)) {
+            for (const auto& conn : g.cellNeighbourhood(cell)) {
                 ++num_conn;
                 weight_sum += conn.weight;
             }

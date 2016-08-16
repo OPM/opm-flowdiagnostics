@@ -48,21 +48,25 @@ namespace Opm {
               weight_iter_(weight_iter)
         {
         }
+
         ConnectionData operator*()
         {
             return { *neighbour_iter_, *weight_iter_ };
         }
+
         bool operator!=(const NeighbourhoodIterator& other) const
         {
             assert((neighbour_iter_ != other.neighbour_iter_) == (weight_iter_ != other.weight_iter_));
             return neighbour_iter_ != other.neighbour_iter_;
         }
+
         NeighbourhoodIterator& operator++()
         {
             ++neighbour_iter_;
             ++weight_iter_;
             return *this;
         }
+
     private:
         const int* neighbour_iter_;
         const double* weight_iter_;
@@ -80,10 +84,12 @@ namespace Opm {
         {
             return begin_;
         }
+
         Iterator end()
         {
             return end_;
         }
+
         Iterator begin_;
         Iterator end_;
     };
