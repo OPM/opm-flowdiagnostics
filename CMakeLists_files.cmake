@@ -51,5 +51,6 @@ list (APPEND PUBLIC_HEADER_FILES
         opm/flowdiagnostics/ConnectivityGraph.hpp
         opm/flowdiagnostics/Toolbox.hpp
         opm/utility/graph/AssembledConnections.hpp
+        opm/utility/graph/AssembledConnectionsIteration.hpp
         opm/utility/numeric/RandomVector.hpp
         )
