@@ -335,8 +335,8 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         s.insert(cas.connectivity().numCells() - 1);
     }
 
-    const auto fwd = diagTool
-        .computeInjectionDiagnostics(Toolbox::StartCells{start});
+    const auto fwd = diagTool.computeInjectionDiagnostics(Toolbox::StartCells{start});
+    const auto rev = diagTool.computeProductionDiagnostics(Toolbox::StartCells{start});
 
     // Global ToF field (accumulated from all injectors)
     {
@@ -344,6 +344,15 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
         std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 4.5 };
+        check_is_close(tof, expected);
+    }
+
+    // Global ToF field (accumulated from all producers)
+    {
+        const auto tof = rev.fd.timeOfFlight();
+
+        BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
+        std::vector<double> expected = { 4.5, 3.5, 2.5, 1.5, 0.5 };
         check_is_close(tof, expected);
     }
 
