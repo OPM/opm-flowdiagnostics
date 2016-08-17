@@ -87,6 +87,9 @@ namespace FlowDiagnostics
 
         ~Toolbox();
 
+        Toolbox(Toolbox&& rhs);
+        Toolbox& operator=(Toolbox&& rhs);
+
         struct PoreVolume
         {
             const std::vector<double>& data;
