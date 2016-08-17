@@ -26,6 +26,7 @@
 #include <opm/utility/graph/tarjan.h>
 #include <cassert>
 #include <cmath>
+#include <memory>
 #include <stdexcept>
 
 namespace Opm
