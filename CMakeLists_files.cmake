@@ -29,6 +29,7 @@ list (APPEND MAIN_SOURCE_FILES
         opm/flowdiagnostics/ConnectionValues.cpp
         opm/flowdiagnostics/ConnectivityGraph.cpp
         opm/flowdiagnostics/Toolbox.cpp
+        opm/flowdiagnostics/TracerTofSolver.cpp
         opm/utility/graph/tarjan.c
         opm/utility/graph/AssembledConnections.cpp
         opm/utility/numeric/RandomVector.cpp
