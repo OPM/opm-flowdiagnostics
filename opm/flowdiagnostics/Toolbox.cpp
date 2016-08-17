@@ -380,6 +380,19 @@ Toolbox(const ConnectivityGraph& conn)
 Toolbox::~Toolbox()
 {}
 
+Toolbox::Toolbox(Toolbox&& rhs)
+    : pImpl_(std::move(rhs.pImpl_))
+{
+}
+
+Toolbox&
+Toolbox::operator=(Toolbox&& rhs)
+{
+    pImpl_ = std::move(rhs.pImpl_);
+
+    return *this;
+}
+
 Toolbox&
 Toolbox::assign(const PoreVolume& pv)
 {
