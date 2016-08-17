@@ -243,7 +243,6 @@ Toolbox::Impl::injDiag(const StartCells& start)
         buildAssembledConnections();
     }
 
-    using SampleSize = RandomVector::Size;
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;
@@ -271,7 +270,6 @@ Toolbox::Impl::prodDiag(const StartCells& start)
         buildAssembledConnections();
     }
 
-    using SampleSize = RandomVector::Size;
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;

@@ -23,11 +23,9 @@
 #endif // HAVE_CONFIG_H
 
 #include <opm/flowdiagnostics/TracerTofSolver.hpp>
-#include <opm/flowdiagnostics/Toolbox.hpp>
 #include <opm/utility/graph/tarjan.h>
-#include <opm/utility/graph/AssembledConnections.hpp>
 #include <cassert>
-#include <iostream>
+#include <cmath>
 #include <stdexcept>
 
 namespace Opm

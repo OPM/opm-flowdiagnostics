@@ -21,12 +21,10 @@
 #ifndef OPM_TRACERTOFSOLVER_HEADER_INCLUDED
 #define OPM_TRACERTOFSOLVER_HEADER_INCLUDED
 
-#include <opm/flowdiagnostics/Toolbox.hpp>
-#include <opm/utility/graph/tarjan.h>
+#include <opm/flowdiagnostics/CellSet.hpp>
+#include <opm/flowdiagnostics/CellSetValues.hpp>
 #include <opm/utility/graph/AssembledConnections.hpp>
-#include <cassert>
-#include <iostream>
-#include <stdexcept>
+#include <vector>
 
 namespace Opm
 {
