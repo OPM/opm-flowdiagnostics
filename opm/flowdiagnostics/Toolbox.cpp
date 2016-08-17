@@ -27,6 +27,7 @@
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/ConnectionValues.hpp>
 #include <opm/flowdiagnostics/ConnectivityGraph.hpp>
+#include <opm/flowdiagnostics/TracerTofSolver.hpp>
 
 #include <algorithm>
 #include <exception>
@@ -37,28 +38,6 @@
 #include <vector>
 
 #include <opm/utility/numeric/RandomVector.hpp>
-
-namespace { namespace Mock {
-
-    std::vector<double>
-    FieldValue(const std::vector<double>::size_type n,
-               const double mean, const double stdev)
-    {
-        static Opm::RandomVector genRandom{};
-
-        return genRandom.normal(n, mean, stdev);
-    }
-
-    std::vector<int>
-    Index(const std::vector<double>::size_type n,
-          const int maxIdx)
-    {
-        static Opm::RandomVector genRandom{};
-
-        return genRandom.index(n, maxIdx);
-    }
-
-}} // namespace (anonymous)::Mock
 
 
 namespace Opm
@@ -219,6 +198,12 @@ private:
 
     std::vector<double> pvol_;
     ConnectionValues    flux_;
+
+    AssembledConnections inj_conn_;
+    AssembledConnections prod_conn_;
+    bool conn_built_ = false;
+
+    void buildAssembledConnections();
 };
 
 Toolbox::Impl::Impl(ConnectivityGraph g)
@@ -248,12 +233,16 @@ Toolbox::Impl::assign(const ConnectionFlux& flux)
     }
 
     flux_ = flux.data;
+    conn_built_ = false;
 }
 
 Toolbox::Forward
 Toolbox::Impl::injDiag(const StartCells& start)
 {
-    using SampleSize = RandomVector::Size;
+    if (!conn_built_) {
+        buildAssembledConnections();
+    }
+
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;
@@ -262,43 +251,13 @@ Toolbox::Impl::injDiag(const StartCells& start)
 
     SolnPtr x(new Soln());
 
-    const auto avgToF = 20.0e3;
-    const auto stdToF = 500.0;
+    TracerTofSolver solver(inj_conn_, pvol_);
+    x->assignToF(solver.solveGlobal(start.points));
 
-    x->assignToF(Mock::FieldValue(g_.numCells(), avgToF, stdToF));
-
-    for (const auto& pt : start.points)
-    {
-        const auto npts = static_cast<SampleSize>
-            (std::distance(pt.begin(), pt.end()));
-
-        const auto n = std::min(
-            { npts, g_.numCells(), static_cast<SampleSize>(100) }
-        );
-
-        const auto idx = Mock::Index(n, g_.numCells() - 1);
-
-        {
-            const auto tof = Mock::FieldValue(n, avgToF, stdToF);
-
-            auto val = CellSetValues{ n };
-            for (auto i = 0*n; i < n; ++i) {
-                val.addCellValue(idx[i], tof[i]);
-            }
-
-            x->assign(pt.id(), ToF{ val });
-        }
-
-        {
-            const auto conc = Mock::FieldValue(n, 0.5, 0.15);
-
-            auto val = CellSetValues{ n };
-            for (auto i = 0*n; i < n; ++i) {
-                val.addCellValue(idx[i], conc[i]);
-            }
-
-            x->assign(pt.id(), Conc{ val });
-        }
+    for (const auto& pt : start.points) {
+        auto solution = solver.solveLocal(pt);
+        x->assign(pt.id(), ToF{ solution.tof });
+        x->assign(pt.id(), Conc{ solution.concentration });
     }
 
     return Forward{ Solution(std::move(x)) };
@@ -307,7 +266,10 @@ Toolbox::Impl::injDiag(const StartCells& start)
 Toolbox::Reverse
 Toolbox::Impl::prodDiag(const StartCells& start)
 {
-    using SampleSize = RandomVector::Size;
+    if (!conn_built_) {
+        buildAssembledConnections();
+    }
+
     using Soln       = Solution::Impl;
     using ToF        = Soln::TimeOfFlight;
     using Conc       = Soln::Concentration;
@@ -316,46 +278,44 @@ Toolbox::Impl::prodDiag(const StartCells& start)
 
     SolnPtr x(new Soln());
 
-    const auto avgToF = 20.0e3;
-    const auto stdToF = 500.0;
+    TracerTofSolver solver(prod_conn_, pvol_);
+    x->assignToF(solver.solveGlobal(start.points));
 
-    x->assignToF(Mock::FieldValue(g_.numCells(), avgToF, stdToF));
-
-    for (const auto& pt : start.points)
-    {
-        const auto npts = static_cast<SampleSize>
-            (std::distance(pt.begin(), pt.end()));
-
-        const auto n = std::min(
-            { npts, g_.numCells(), static_cast<SampleSize>(100) }
-        );
-
-        const auto idx = Mock::Index(n, g_.numCells() - 1);
-
-        {
-            const auto tof = Mock::FieldValue(n, avgToF, stdToF);
-
-            auto val = CellSetValues{ n };
-            for (auto i = 0*n; i < n; ++i) {
-                val.addCellValue(idx[i], tof[i]);
-            }
-
-            x->assign(pt.id(), ToF{ val });
-        }
-
-        {
-            const auto conc = Mock::FieldValue(n, 0.5, 0.15);
-
-            auto val = CellSetValues{ n };
-            for (auto i = 0*n; i < n; ++i) {
-                val.addCellValue(idx[i], conc[i]);
-            }
-
-            x->assign(pt.id(), Conc{ val });
-        }
+    for (const auto& pt : start.points) {
+        auto solution = solver.solveLocal(pt);
+        x->assign(pt.id(), ToF{ solution.tof });
+        x->assign(pt.id(), Conc{ solution.concentration });
     }
 
     return Reverse{ Solution(std::move(x)) };
+}
+
+void
+Toolbox::Impl::buildAssembledConnections()
+{
+    // Create the data structures needed by the tracer/tof solver.
+    const size_t num_connections = g_.numConnections();
+    inj_conn_ = AssembledConnections();
+    prod_conn_ = AssembledConnections();
+    for (size_t conn_idx = 0; conn_idx < num_connections; ++conn_idx) {
+        auto cells = g_.connection(conn_idx);
+        using ConnID = ConnectionValues::ConnID;
+        using PhaseID = ConnectionValues::PhaseID;
+        const double connection_flux = flux_(ConnID{conn_idx}, PhaseID{0});
+        if (connection_flux > 0.0) {
+            inj_conn_.addConnection(cells.first, cells.second, connection_flux);
+            prod_conn_.addConnection(cells.second, cells.first, connection_flux);
+        } else {
+            inj_conn_.addConnection(cells.second, cells.first, -connection_flux);
+            prod_conn_.addConnection(cells.first, cells.second, -connection_flux);
+        }
+    }
+    const int num_cells = g_.numCells();
+    inj_conn_.compress(num_cells);
+    prod_conn_.compress(num_cells);
+
+    // Mark as built (until flux changed).
+    conn_built_ = true;
 }
 
 // =====================================================================

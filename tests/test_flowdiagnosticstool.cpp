@@ -271,4 +271,146 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
     }
 }
 
+
+
+
+namespace {
+
+    template <class Collection1, class Collection2>
+    void check_is_close(const Collection1& c1, const Collection2& c2)
+    {
+        BOOST_REQUIRE_EQUAL(c1.size(), c2.size());
+
+        if (! c1.empty()) {
+            auto i1 = c1.begin(), e1 = c1.end();
+            auto i2 = c2.begin();
+
+            for (; i1 != e1; ++i1, ++i2) {
+                BOOST_CHECK_CLOSE(*i1, *i2, 1.0e-10);
+            }
+        }
+    }
+
+} // Namespace Anonymous
+
+
+
+
+
+
+BOOST_AUTO_TEST_CASE (OneDimCase)
+{
+    using namespace Opm::FlowDiagnostics;
+
+    const auto cas = Setup(5, 1);
+    const auto& graph = cas.connectivity();
+
+    Toolbox diagTool(graph);
+
+    diagTool.assign(Toolbox::PoreVolume{ cas.poreVolume() });
+    ConnectionValues flux(ConnectionValues::NumConnections{ graph.numConnections() },
+                          ConnectionValues::NumPhases     { 1 });
+    const size_t nconn = cas.connectivity().numConnections();
+    for (size_t conn = 0; conn < nconn; ++conn) {
+        flux(ConnectionValues::ConnID{conn}, ConnectionValues::PhaseID{0}) = 0.3;
+    }
+    diagTool.assign(Toolbox::ConnectionFlux{ flux });
+
+    auto start = std::vector<CellSet>{};
+    {
+        start.emplace_back();
+
+        auto& s = start.back();
+
+        s.identify(CellSetID("I-1"));
+        s.insert(0);
+    }
+
+    {
+        start.emplace_back();
+
+        auto& s = start.back();
+
+        s.identify(CellSetID("I-2"));
+        s.insert(cas.connectivity().numCells() - 1);
+    }
+
+    const auto fwd = diagTool.computeInjectionDiagnostics(Toolbox::StartCells{start});
+    const auto rev = diagTool.computeProductionDiagnostics(Toolbox::StartCells{start});
+
+    // Global ToF field (accumulated from all injectors)
+    {
+        const auto tof = fwd.fd.timeOfFlight();
+
+        BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
+        std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 4.5 };
+        check_is_close(tof, expected);
+    }
+
+    // Global ToF field (accumulated from all producers)
+    {
+        const auto tof = rev.fd.timeOfFlight();
+
+        BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
+        std::vector<double> expected = { 4.5, 3.5, 2.5, 1.5, 0.5 };
+        check_is_close(tof, expected);
+    }
+
+    // Verify set of start points.
+    {
+        const auto startpts = fwd.fd.startPoints();
+
+        BOOST_CHECK_EQUAL(startpts.size(), start.size());
+
+        for (const auto& pt : startpts) {
+            auto pos =
+                std::find_if(start.begin(), start.end(),
+                    [&pt](const CellSet& s)
+                    {
+                        return s.id().to_string() == pt.to_string();
+                    });
+
+            // ID of 'pt' *MUST* be in set of identified start points.
+            BOOST_CHECK(pos != start.end());
+        }
+    }
+
+    // Tracer-ToF
+    {
+        const auto tof = fwd.fd
+            .timeOfFlight(CellSetID("I-1"));
+
+        for (decltype(tof.cellValueCount())
+                 i = 0, n = tof.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = tof.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+
+    // Tracer Concentration
+    {
+        const auto conc = fwd.fd
+            .concentration(CellSetID("I-2"));
+
+        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
+                           conc.cellValueCount());
+
+        for (decltype(conc.cellValueCount())
+                 i = 0, n = conc.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = conc.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
