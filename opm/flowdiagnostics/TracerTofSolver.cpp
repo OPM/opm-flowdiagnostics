@@ -24,6 +24,7 @@
 
 #include <opm/flowdiagnostics/TracerTofSolver.hpp>
 #include <opm/utility/graph/tarjan.h>
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <memory>
