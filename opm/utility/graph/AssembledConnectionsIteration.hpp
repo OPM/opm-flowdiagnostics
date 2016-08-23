@@ -80,12 +80,12 @@ namespace Opm {
     template <class Iterator>
     struct SimpleIteratorRange
     {
-        Iterator begin()
+        Iterator begin() const
         {
             return begin_;
         }
 
-        Iterator end()
+        Iterator end() const
         {
             return end_;
         }
