@@ -28,6 +28,7 @@
 #include <cassert>
 #include <exception>
 #include <iterator>
+#include <ostream>
 #include <stdexcept>
 #include <utility>
 
@@ -455,4 +456,19 @@ Opm::AssembledConnections::cellNeighbourhood(const int cell) const
     assert(connectionWeight().size() == neighbourhood().size());
     const double* w = connectionWeight().data();
     return CellNeighbours{ {nb + beg, w + beg}, {nb + end, w + end} };
+}
+
+std::ostream&
+Opm::AssembledConnections::write(std::ostream& os) const
+{
+    os.precision(16);
+    const int num_cells = numRows();
+    for (int cell = 0; cell < num_cells; ++cell) {
+        const auto nb = cellNeighbourhood(cell);
+        for (const auto& conn : nb) {
+            os << cell << ' ' << conn.neighbour << ' ' << conn.weight << '\n';
+        }
+    }
+    os << std::flush;
+    return os;
 }

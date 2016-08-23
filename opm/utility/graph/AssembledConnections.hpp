@@ -24,6 +24,7 @@
 #include <opm/utility/graph/AssembledConnectionsIteration.hpp>
 
 #include <cstddef>
+#include <iosfwd>
 #include <vector>
 
 /// \file
@@ -132,6 +133,11 @@ namespace Opm {
         /// This method can only be called if the weight-providing
         /// overload of addConnection() was used to build the instance.
         CellNeighbours cellNeighbourhood(const int cell) const;
+
+        /// Output content to stream, assumes compress() has been called,
+        /// and that the weight-providing overload of addConnection() was
+        /// used to build the instance, as for cellNeighbourhood().
+        std::ostream& write(std::ostream& os) const;
 
     private:
         class Connections
