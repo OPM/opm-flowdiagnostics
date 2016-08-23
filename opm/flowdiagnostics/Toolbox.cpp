@@ -295,13 +295,18 @@ Toolbox::Impl::buildAssembledConnections()
 {
     // Create the data structures needed by the tracer/tof solver.
     const size_t num_connections = g_.numConnections();
+    const size_t num_phases = flux_.numPhases();
     inj_conn_ = AssembledConnections();
     prod_conn_ = AssembledConnections();
     for (size_t conn_idx = 0; conn_idx < num_connections; ++conn_idx) {
         auto cells = g_.connection(conn_idx);
         using ConnID = ConnectionValues::ConnID;
         using PhaseID = ConnectionValues::PhaseID;
-        const double connection_flux = flux_(ConnID{conn_idx}, PhaseID{0});
+        // Adding up all phase fluxes. TODO: ensure rigor, allow phase-based calculations.
+        double connection_flux = 0.0;
+        for (size_t phase = 0; phase < num_phases; ++phase) {
+            connection_flux += flux_(ConnID{conn_idx}, PhaseID{phase});
+        }
         if (connection_flux > 0.0) {
             inj_conn_.addConnection(cells.first, cells.second, connection_flux);
             prod_conn_.addConnection(cells.second, cells.first, connection_flux);
