@@ -459,16 +459,15 @@ Opm::AssembledConnections::cellNeighbourhood(const int cell) const
 }
 
 std::ostream&
-Opm::AssembledConnections::write(std::ostream& os) const
+Opm::operator<<(std::ostream& os, const Opm::AssembledConnections& ac)
 {
     os.precision(16);
-    const int num_cells = numRows();
+    const int num_cells = ac.numRows();
     for (int cell = 0; cell < num_cells; ++cell) {
-        const auto nb = cellNeighbourhood(cell);
+        const auto nb = ac.cellNeighbourhood(cell);
         for (const auto& conn : nb) {
             os << cell << ' ' << conn.neighbour << ' ' << conn.weight << '\n';
         }
     }
-    os << std::flush;
     return os;
 }

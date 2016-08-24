@@ -134,11 +134,6 @@ namespace Opm {
         /// overload of addConnection() was used to build the instance.
         CellNeighbours cellNeighbourhood(const int cell) const;
 
-        /// Output content to stream, assumes compress() has been called,
-        /// and that the weight-providing overload of addConnection() was
-        /// used to build the instance, as for cellNeighbourhood().
-        std::ostream& write(std::ostream& os) const;
-
     private:
         class Connections
         {
@@ -234,6 +229,18 @@ namespace Opm {
         Connections conns_;
         CSR         csr_;
     };
+
+
+
+
+
+    /// Output an AssembledConnections object to a stream in text format.
+    ///
+    /// Assumes compress() has been called, and that the
+    /// weight-providing overload of addConnection() was used to build
+    /// the ac instance, as for AssembledConnections::cellNeighbourhood().
+    std::ostream& operator<<(std::ostream& os, const AssembledConnections& ac);
+
 
 } // namespace Opm
 
