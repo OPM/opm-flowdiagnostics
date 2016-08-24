@@ -458,10 +458,18 @@ Opm::AssembledConnections::cellNeighbourhood(const int cell) const
     return CellNeighbours{ {nb + beg, w + beg}, {nb + end, w + end} };
 }
 
+
+
+
+// Note: not a member of class AssembledConnections.
 std::ostream&
 Opm::operator<<(std::ostream& os, const Opm::AssembledConnections& ac)
 {
-    os.precision(16);
+    // Set output stream format, store original settings.
+    const auto oprec = os.precision(16);
+    const auto oflags = os.setf(std::ios_base::scientific);
+
+    // Write connections cell-by-cell.
     const int num_cells = ac.numRows();
     for (int cell = 0; cell < num_cells; ++cell) {
         const auto nb = ac.cellNeighbourhood(cell);
@@ -469,5 +477,10 @@ Opm::operator<<(std::ostream& os, const Opm::AssembledConnections& ac)
             os << cell << ' ' << conn.neighbour << ' ' << conn.weight << '\n';
         }
     }
+
+    // Restore original stream settings.
+    os.precision(oprec);
+    os.setf(oflags);
+
     return os;
 }
