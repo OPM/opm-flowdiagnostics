@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cassert>
 #include <exception>
+#include <ios>
 #include <iterator>
 #include <ostream>
 #include <stdexcept>
