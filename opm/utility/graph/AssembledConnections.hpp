@@ -24,6 +24,7 @@
 #include <opm/utility/graph/AssembledConnectionsIteration.hpp>
 
 #include <cstddef>
+#include <iosfwd>
 #include <vector>
 
 /// \file
@@ -228,6 +229,18 @@ namespace Opm {
         Connections conns_;
         CSR         csr_;
     };
+
+
+
+
+
+    /// Output an AssembledConnections object to a stream in text format.
+    ///
+    /// Assumes compress() has been called, and that the
+    /// weight-providing overload of addConnection() was used to build
+    /// the ac instance, as for AssembledConnections::cellNeighbourhood().
+    std::ostream& operator<<(std::ostream& os, const AssembledConnections& ac);
+
 
 } // namespace Opm
 
