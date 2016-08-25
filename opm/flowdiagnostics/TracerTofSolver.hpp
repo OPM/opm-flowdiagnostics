@@ -89,7 +89,11 @@ namespace FlowDiagnostics
 
         // --------------  Private methods --------------
 
+        void prepareForSolve();
+
         void computeOrdering();
+
+        void computeLocalOrdering(const CellSet& startset);
 
         void solveSingleCell(const int cell);
 

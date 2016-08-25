@@ -52,17 +52,8 @@ namespace FlowDiagnostics
     {
         static_cast<void>(all_startsets); // TODO: use to compute tracer.
 
-        // Reset instance variables.
-        const int num_cells = pv_.size();
-        upwind_influx_.clear();
-        upwind_influx_.resize(num_cells, 0.0);
-        upwind_contrib_.clear();
-        upwind_contrib_.resize(num_cells, 0.0);
-        tof_.clear();
-        tof_.resize(num_cells, -1e100);
-        num_multicell_ = 0;
-        max_size_multicell_ = 0;
-        max_iter_multicell_ = 0;
+        // Reset solver variables.
+        prepareForSolve();
 
         // Compute topological ordering.
         computeOrdering();
@@ -88,8 +79,50 @@ namespace FlowDiagnostics
 
     TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSet& startset)
     {
-        static_cast<void>(startset);
-        return LocalSolution{ CellSetValues{}, CellSetValues{} };
+        // Reset solver variables.
+        prepareForSolve();
+
+        // Compute topological ordering.
+        computeLocalOrdering(startset);
+
+        // Solve each component.
+        const int num_components = component_starts_.size() - 1;
+        for (int comp = 0; comp < num_components; ++comp) {
+            const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
+            if (comp_size == 1) {
+                solveSingleCell(sequence_[component_starts_[comp]]);
+            } else {
+                solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
+            }
+        }
+
+        // Return computed time-of-flight.
+        CellSetValues local_tof;
+        const int num_elements = component_starts_[num_components];
+        for (int element = 0; element < num_elements; ++element) {
+            const int cell = sequence_[element];
+            local_tof.addCellValue(cell, tof_[cell]);
+        }
+        return LocalSolution{ local_tof, CellSetValues{} }; // TODO also return tracer
+    }
+
+
+
+
+
+    void TracerTofSolver::prepareForSolve()
+    {
+        // Reset instance variables.
+        const int num_cells = pv_.size();
+        upwind_influx_.clear();
+        upwind_influx_.resize(num_cells, 0.0);
+        upwind_contrib_.clear();
+        upwind_contrib_.resize(num_cells, 0.0);
+        tof_.clear();
+        tof_.resize(num_cells, -1e100);
+        num_multicell_ = 0;
+        max_size_multicell_ = 0;
+        max_iter_multicell_ = 0;
     }
 
 
@@ -122,6 +155,45 @@ namespace FlowDiagnostics
             component_starts_[comp + 1] = component_starts_[comp] + tc.size;
         }
         assert(component_starts_.back() == int(num_cells));
+    }
+
+
+
+
+
+    void TracerTofSolver::computeLocalOrdering(const CellSet& startset)
+    {
+        // Extract start cells.
+        std::vector<int> startcells(startset.begin(), startset.end());
+
+        // Compute reverse topological ordering.
+        const size_t num_cells = pv_.size();
+        assert(g_.startPointers().size() == num_cells + 1);
+        struct ResultDeleter { void operator()(TarjanSCCResult* x) { destroy_tarjan_sccresult(x); } };
+        std::unique_ptr<TarjanSCCResult, ResultDeleter> result;
+        {
+            struct WorkspaceDeleter { void operator()(TarjanWorkSpace* x) { destroy_tarjan_workspace(x); } };
+            std::unique_ptr<TarjanWorkSpace, WorkspaceDeleter> ws(create_tarjan_workspace(num_cells));
+            result.reset(tarjan_reachable_sccs(num_cells, g_.startPointers().data(), g_.neighbourhood().data(),
+                                               startcells.size(), startcells.data(), ws.get()));
+        }
+
+        // Must reverse ordering, since Tarjan computes reverse ordering.
+        const int ok = tarjan_reverse_sccresult(result.get());
+        if (!ok) {
+            throw std::runtime_error("Failed to reverse topological ordering in TracerTofSolver::computeOrdering()");
+        }
+
+        // Extract data from solution.
+        sequence_.resize(num_cells);
+        const int num_comp = tarjan_get_numcomponents(result.get());
+        component_starts_.resize(num_comp + 1);
+        component_starts_[0] = 0;
+        for (int comp = 0; comp < num_comp; ++comp) {
+            const TarjanComponent tc = tarjan_get_strongcomponent(result.get(), comp);
+            std::copy(tc.vertex, tc.vertex + tc.size, sequence_.begin() + component_starts_[comp]);
+            component_starts_[comp + 1] = component_starts_[comp] + tc.size;
+        }
     }
 
 
