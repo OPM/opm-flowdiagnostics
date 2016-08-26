@@ -37,10 +37,48 @@ namespace FlowDiagnostics
 
 
 
+
+    namespace {
+
+        std::vector<double> computeInflux(const AssembledConnections& graph)
+        {
+            const int num_cells = graph.numRows();
+            std::vector<double> influx(num_cells, 0.0);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                const auto nb = graph.cellNeighbourhood(cell);
+                for (const auto& conn : nb) {
+                    influx[conn.neighbour] += conn.weight;
+                }
+            }
+            return influx;
+        }
+
+
+
+        std::vector<double> computeOutflux(const AssembledConnections& graph)
+        {
+            const int num_cells = graph.numRows();
+            std::vector<double> outflux(num_cells, 0.0);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                const auto nb = graph.cellNeighbourhood(cell);
+                for (const auto& conn : nb) {
+                    outflux[cell] += conn.weight;
+                }
+            }
+            return outflux;
+        }
+
+    } // anonymous namespace
+
+
+
+
     TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
                                      const std::vector<double>& pore_volumes)
-        : g_(graph),
-          pv_(pore_volumes)
+        : g_(graph)
+        , pv_(pore_volumes)
+        , influx_(computeInflux(graph))
+        , outflux_(computeOutflux(graph))
     {
     }
 
@@ -114,8 +152,6 @@ namespace FlowDiagnostics
     {
         // Reset instance variables.
         const int num_cells = pv_.size();
-        upwind_influx_.clear();
-        upwind_influx_.resize(num_cells, 0.0);
         upwind_contrib_.clear();
         upwind_contrib_.resize(num_cells, 0.0);
         tof_.clear();
@@ -202,12 +238,6 @@ namespace FlowDiagnostics
 
     void TracerTofSolver::solveSingleCell(const int cell)
     {
-        // Compute downwind fluxes.
-        double downwind_flux = 0.0;
-        for (const auto& conn : g_.cellNeighbourhood(cell)) {
-            downwind_flux += conn.weight;
-        }
-
         // If source cell, we have influx not accounted for, and
         // downwind_flux > upwind_flux_[cell]. However the tof at
         // the influx (wells typically) is zero, so there is no
@@ -217,13 +247,13 @@ namespace FlowDiagnostics
         // downwind_flux < upwind_flux_[cell]. In that case we
         // account for it by assuming incompressibility and making
         // them equal.
-        downwind_flux = std::max(downwind_flux, upwind_influx_[cell]);
+        const double downwind_flux = std::max(outflux_[cell], influx_[cell]);
 
         // Compute tof.
         tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/downwind_flux;
 
         // Halve if source (well inflow) cell.
-        if (upwind_influx_[cell] == 0.0) {
+        if (influx_[cell] == 0.0) {
             tof_[cell] = 0.5 * tof_[cell];
         }
 
@@ -231,7 +261,6 @@ namespace FlowDiagnostics
         for (const auto& conn : g_.cellNeighbourhood(cell)) {
             const int downwind_cell = conn.neighbour;
             const double flux = conn.weight;
-            upwind_influx_[downwind_cell] += flux;
             upwind_contrib_[downwind_cell] += tof_[cell] * flux;
         }
     }

@@ -77,9 +77,10 @@ namespace FlowDiagnostics
 
         const AssembledConnections& g_;
         const std::vector<double>& pv_;
+        const std::vector<double> influx_;
+        const std::vector<double> outflux_;
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
-        std::vector<double> upwind_influx_;
         std::vector<double> upwind_contrib_;
         std::vector<double> tof_;
         int num_multicell_ = 0;
