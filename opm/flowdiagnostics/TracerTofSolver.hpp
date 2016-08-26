@@ -88,7 +88,15 @@ namespace FlowDiagnostics
         int max_iter_multicell_ = 0;
         const double gauss_seidel_tol_ = 1e-3;
 
+        // --------------  Private helper class --------------
+
+        struct InOutFluxComputer;
+
         // --------------  Private methods --------------
+
+        TracerTofSolver(const AssembledConnections& graph,
+                        const std::vector<double>& pore_volumes,
+                        InOutFluxComputer&& inout);
 
         void prepareForSolve();
 

@@ -38,47 +38,47 @@ namespace FlowDiagnostics
 
 
 
-    namespace {
-
-        std::vector<double> computeInflux(const AssembledConnections& graph)
+    struct TracerTofSolver::InOutFluxComputer
+    {
+        InOutFluxComputer(const AssembledConnections& graph)
         {
             const int num_cells = graph.numRows();
-            std::vector<double> influx(num_cells, 0.0);
+            influx.resize(num_cells, 0.0);
+            outflux.resize(num_cells, 0.0);
             for (int cell = 0; cell < num_cells; ++cell) {
                 const auto nb = graph.cellNeighbourhood(cell);
                 for (const auto& conn : nb) {
                     influx[conn.neighbour] += conn.weight;
-                }
-            }
-            return influx;
-        }
-
-
-
-        std::vector<double> computeOutflux(const AssembledConnections& graph)
-        {
-            const int num_cells = graph.numRows();
-            std::vector<double> outflux(num_cells, 0.0);
-            for (int cell = 0; cell < num_cells; ++cell) {
-                const auto nb = graph.cellNeighbourhood(cell);
-                for (const auto& conn : nb) {
                     outflux[cell] += conn.weight;
                 }
             }
-            return outflux;
         }
 
-    } // anonymous namespace
+        std::vector<double> influx;
+        std::vector<double> outflux;
+    };
+
 
 
 
 
     TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
                                      const std::vector<double>& pore_volumes)
+        : TracerTofSolver(graph, pore_volumes, InOutFluxComputer(graph))
+    {
+    }
+
+
+
+
+
+    TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
+                                     const std::vector<double>& pore_volumes,
+                                     InOutFluxComputer&& inout)
         : g_(graph)
         , pv_(pore_volumes)
-        , influx_(computeInflux(graph))
-        , outflux_(computeOutflux(graph))
+        , influx_(std::move(inout.influx))
+        , outflux_(std::move(inout.outflux))
     {
     }
 
