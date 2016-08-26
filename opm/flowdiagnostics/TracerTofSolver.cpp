@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 
@@ -155,7 +156,7 @@ namespace FlowDiagnostics
     void TracerTofSolver::setupSourceTerms(const CellSet& startset)
     {
         for (const int cell : startset) {
-            source_term_[cell] = outflux_[cell] - influx_[cell];
+            source_term_[cell] = std::numeric_limits<double>::infinity(); // std::max(outflux_[cell] - influx_[cell], 0.0); // Ignore negative sources.
         }
     }
 
@@ -254,6 +255,10 @@ namespace FlowDiagnostics
 
     void TracerTofSolver::solveSingleCell(const int cell)
     {
+        // Note: comment below is not matching the current implementation,
+        // but kept as a reference since we have not settled the formulation
+        // 100% yet.
+        //
         // If source cell, we have influx not accounted for, and
         // downwind_flux > upwind_flux_[cell]. However the tof at
         // the influx (wells typically) is zero, so there is no
@@ -263,14 +268,21 @@ namespace FlowDiagnostics
         // downwind_flux < upwind_flux_[cell]. In that case we
         // account for it by assuming incompressibility and making
         // them equal.
-        const double downwind_flux = std::max(outflux_[cell], influx_[cell]);
+        //const double downwind_flux = std::max(outflux_[cell], influx_[cell]);
+
+        const double total_influx_ = influx_[cell] + source_term_[cell];
 
         // Compute tof.
-        tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/downwind_flux;
+        tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/total_influx_;
 
         // Halve if source (well inflow) cell.
+        // if (upwind_contrib_[cell] == 0.0) {
+        //     tof_[cell] = 0.5 * tof_[cell];
+        // }
+
+        // Set tof to zero if cell has no reservoir influx (assume it is a source).
         if (influx_[cell] == 0.0) {
-            tof_[cell] = 0.5 * tof_[cell];
+            tof_[cell] = 0.0;
         }
 
         // Set contribution for my downwind cells (if any).
