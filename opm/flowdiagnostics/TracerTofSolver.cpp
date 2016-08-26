@@ -91,10 +91,11 @@ namespace FlowDiagnostics
 
     std::vector<double> TracerTofSolver::solveGlobal(const std::vector<CellSet>& all_startsets)
     {
-        static_cast<void>(all_startsets); // TODO: use to compute tracer.
-
-        // Reset solver variables.
+        // Reset solver variables and set source terms.
         prepareForSolve();
+        for (const CellSet& startset : all_startsets) {
+            setupSourceTerms(startset);
+        }
 
         // Compute topological ordering.
         computeOrdering();
@@ -120,8 +121,9 @@ namespace FlowDiagnostics
 
     TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSet& startset)
     {
-        // Reset solver variables.
+        // Reset solver variables and set source terms.
         prepareForSolve();
+        setupSourceTerms(startset);
 
         // Compute topological ordering.
         computeLocalOrdering(startset);
@@ -155,6 +157,8 @@ namespace FlowDiagnostics
     {
         // Reset instance variables.
         const int num_cells = pv_.size();
+        source_term_.clear();
+        source_term_.resize(num_cells, 0.0);
         upwind_contrib_.clear();
         upwind_contrib_.resize(num_cells, 0.0);
         tof_.clear();
@@ -162,6 +166,17 @@ namespace FlowDiagnostics
         num_multicell_ = 0;
         max_size_multicell_ = 0;
         max_iter_multicell_ = 0;
+    }
+
+
+
+
+
+    void TracerTofSolver::setupSourceTerms(const CellSet& startset)
+    {
+        for (const int cell : startset) {
+            source_term_[cell] = outflux_[cell] - influx_[cell];
+        }
     }
 
 

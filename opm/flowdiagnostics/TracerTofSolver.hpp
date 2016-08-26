@@ -79,6 +79,7 @@ namespace FlowDiagnostics
         const std::vector<double>& pv_;
         const std::vector<double> influx_;
         const std::vector<double> outflux_;
+        std::vector<double> source_term_;
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
         std::vector<double> upwind_contrib_;
@@ -99,6 +100,8 @@ namespace FlowDiagnostics
                         InOutFluxComputer&& inout);
 
         void prepareForSolve();
+
+        void setupSourceTerms(const CellSet& startset);
 
         void computeOrdering();
 
