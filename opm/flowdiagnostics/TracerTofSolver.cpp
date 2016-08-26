@@ -38,6 +38,7 @@ namespace FlowDiagnostics
 
 
 
+    // This computes both in and outflux with a single traversal of the graph.
     struct TracerTofSolver::InOutFluxComputer
     {
         InOutFluxComputer(const AssembledConnections& graph)
@@ -72,6 +73,8 @@ namespace FlowDiagnostics
 
 
 
+    // The InOutFluxComputer is used so that influx_ and outflux_ can be
+    // const members of the class.
     TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
                                      const std::vector<double>& pore_volumes,
                                      InOutFluxComputer&& inout)
