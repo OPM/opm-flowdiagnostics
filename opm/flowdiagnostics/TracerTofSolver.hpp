@@ -107,6 +107,8 @@ namespace FlowDiagnostics
 
         void computeLocalOrdering(const CellSet& startset);
 
+        void solve();
+
         void solveSingleCell(const int cell);
 
         void solveMultiCell(const int num_cells, const int* cells);

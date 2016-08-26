@@ -97,19 +97,9 @@ namespace FlowDiagnostics
             setupSourceTerms(startset);
         }
 
-        // Compute topological ordering.
+        // Compute topological ordering and solve.
         computeOrdering();
-
-        // Solve each component.
-        const int num_components = component_starts_.size() - 1;
-        for (int comp = 0; comp < num_components; ++comp) {
-            const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
-            if (comp_size == 1) {
-                solveSingleCell(sequence_[component_starts_[comp]]);
-            } else {
-                solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
-            }
-        }
+        solve();
 
         // Return computed time-of-flight.
         return tof_;
@@ -125,23 +115,13 @@ namespace FlowDiagnostics
         prepareForSolve();
         setupSourceTerms(startset);
 
-        // Compute topological ordering.
+        // Compute local topological ordering and solve.
         computeLocalOrdering(startset);
-
-        // Solve each component.
-        const int num_components = component_starts_.size() - 1;
-        for (int comp = 0; comp < num_components; ++comp) {
-            const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
-            if (comp_size == 1) {
-                solveSingleCell(sequence_[component_starts_[comp]]);
-            } else {
-                solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
-            }
-        }
+        solve();
 
         // Return computed time-of-flight.
         CellSetValues local_tof;
-        const int num_elements = component_starts_[num_components];
+        const int num_elements = component_starts_.back();
         for (int element = 0; element < num_elements; ++element) {
             const int cell = sequence_[element];
             local_tof.addCellValue(cell, tof_[cell]);
@@ -247,6 +227,24 @@ namespace FlowDiagnostics
             const TarjanComponent tc = tarjan_get_strongcomponent(result.get(), comp);
             std::copy(tc.vertex, tc.vertex + tc.size, sequence_.begin() + component_starts_[comp]);
             component_starts_[comp + 1] = component_starts_[comp] + tc.size;
+        }
+    }
+
+
+
+
+
+    void TracerTofSolver::solve()
+    {
+        // Solve each component.
+        const int num_components = component_starts_.size() - 1;
+        for (int comp = 0; comp < num_components; ++comp) {
+            const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
+            if (comp_size == 1) {
+                solveSingleCell(sequence_[component_starts_[comp]]);
+            } else {
+                solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
+            }
         }
     }
 
