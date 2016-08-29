@@ -75,6 +75,7 @@ private:
 
 Toolbox::Impl::Impl(ConnectivityGraph g)
     : g_   (std::move(g))
+    , pvol_()
     , flux_(ConnectionValues::NumConnections{ 0 },
             ConnectionValues::NumPhases     { 0 })
 {}
