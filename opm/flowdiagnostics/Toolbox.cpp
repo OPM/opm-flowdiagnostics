@@ -56,6 +56,7 @@ public:
 
     void assignPoreVolume(const std::vector<double>& pvol);
     void assignConnectionFlux(const ConnectionValues& flux);
+    void assignInflowFlux(const CellSetValues& inflow_flux);
 
     Forward injDiag (const std::vector<CellSet>& start_sets);
     Reverse prodDiag(const std::vector<CellSet>& start_sets);
@@ -65,6 +66,7 @@ private:
 
     std::vector<double> pvol_;
     ConnectionValues    flux_;
+    CellSetValues       inflow_flux_;
 
     AssembledConnections inj_conn_;
     AssembledConnections prod_conn_;
@@ -78,6 +80,7 @@ Toolbox::Impl::Impl(ConnectivityGraph g)
     , pvol_()
     , flux_(ConnectionValues::NumConnections{ 0 },
             ConnectionValues::NumPhases     { 0 })
+    , inflow_flux_()
 {}
 
 void
@@ -101,6 +104,12 @@ Toolbox::Impl::assignConnectionFlux(const ConnectionValues& flux)
 
     flux_ = flux;
     conn_built_ = false;
+}
+
+void
+Toolbox::Impl::assignInflowFlux(const CellSetValues& inflow_flux)
+{
+    inflow_flux_ = inflow_flux;
 }
 
 Toolbox::Forward
@@ -231,6 +240,12 @@ void
 Toolbox::assignConnectionFlux(const ConnectionValues& flux)
 {
     pImpl_->assignConnectionFlux(flux);
+}
+
+void
+Toolbox::assignInflowFlux(const CellSetValues& inflow_flux)
+{
+    pImpl_->assignInflowFlux(inflow_flux);
 }
 
 Toolbox::Forward

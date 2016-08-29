@@ -57,6 +57,9 @@ namespace FlowDiagnostics
         /// Assign fluxes associated with each connection.
         void assignConnectionFlux(const ConnectionValues& flux);
 
+        /// Assign inflow fluxes, typically from wells.
+        void assignInflowFlux(const CellSetValues& inflow_flux);
+
         struct Forward
         {
             const Solution fd;
