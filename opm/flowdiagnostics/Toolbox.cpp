@@ -45,139 +45,6 @@ namespace Opm
 namespace FlowDiagnostics
 {
 
-
-// ---------------------------------------------------------------------
-// Class Solution::Impl
-// ---------------------------------------------------------------------
-
-class Solution::Impl
-{
-public:
-    using GlobalToF = std::vector<double>;
-
-    struct TimeOfFlight
-    {
-        CellSetValues data;
-    };
-
-    struct Concentration
-    {
-        CellSetValues data;
-    };
-
-    void assignToF(GlobalToF&& tof);
-    void assign   (const CellSetID& i, TimeOfFlight&&  tof);
-    void assign   (const CellSetID& i, Concentration&& conc);
-
-    std::vector<CellSetID> startPoints() const;
-
-    const GlobalToF& timeOfFlight() const;
-
-    CellSetValues timeOfFlight (const CellSetID& tracer) const;
-    CellSetValues concentration(const CellSetID& tracer) const;
-
-private:
-    struct CompareCellSetIDs
-    {
-        bool operator()(const CellSetID& x,
-                        const CellSetID& y) const
-        {
-            return x.to_string() < y.to_string();
-        }
-    };
-
-    using SolutionMap =
-        std::map<CellSetID, CellSetValues, CompareCellSetIDs>;
-
-    GlobalToF   tof_;
-    SolutionMap tracerToF_;
-    SolutionMap tracer_;
-
-    void assign(const CellSetID& i,
-                CellSetValues&&  x,
-                SolutionMap&     soln);
-
-    CellSetValues
-    solutionValues(const CellSetID&   i,
-                   const SolutionMap& soln) const;
-};
-
-void
-Solution::Impl::assignToF(GlobalToF&& tof)
-{
-    tof_ = std::move(tof);
-}
-
-void
-Solution::
-Impl::assign(const CellSetID& i, TimeOfFlight&& tof)
-{
-    assign(i, std::move(tof.data), tracerToF_);
-}
-
-void
-Solution::
-Impl::assign(const CellSetID& i, Concentration&& conc)
-{
-    assign(i, std::move(conc.data), tracer_);
-}
-
-std::vector<CellSetID>
-Solution::Impl::startPoints() const
-{
-    auto s = std::vector<CellSetID>{};
-    s.reserve(tracer_.size());
-
-    for (const auto& t : tracer_) {
-        s.emplace_back(t.first);
-    }
-
-    return s;
-}
-
-const Solution::Impl::GlobalToF&
-Solution::Impl::timeOfFlight() const
-{
-    return tof_;
-}
-
-CellSetValues
-Solution::
-Impl::timeOfFlight(const CellSetID& tracer) const
-{
-    return solutionValues(tracer, tracerToF_);
-}
-
-CellSetValues
-Solution::
-Impl::concentration(const CellSetID& tracer) const
-{
-    return solutionValues(tracer, tracer_);
-}
-
-void
-Solution::
-Impl::assign(const CellSetID& i,
-             CellSetValues&&  x,
-             SolutionMap&     soln)
-{
-    soln[i] = std::move(x);
-}
-
-CellSetValues
-Solution::
-Impl::solutionValues(const CellSetID&   i,
-                     const SolutionMap& soln) const
-{
-    auto p = soln.find(i);
-
-    if (p == soln.end()) {
-        return CellSetValues{};
-    }
-
-    return p->second;
-}
-
 // ---------------------------------------------------------------------
 // Class Toolbox::Impl
 // ---------------------------------------------------------------------
@@ -187,11 +54,11 @@ class Toolbox::Impl
 public:
     explicit Impl(ConnectivityGraph g);
 
-    void assign(const PoreVolume&     pv);
-    void assign(const ConnectionFlux& flux);
+    void assignPoreVolume(const std::vector<double>& pvol);
+    void assignConnectionFlux(const ConnectionValues& flux);
 
-    Forward injDiag (const StartCells& start);
-    Reverse prodDiag(const StartCells& start);
+    Forward injDiag (const std::vector<CellSet>& start_sets);
+    Reverse prodDiag(const std::vector<CellSet>& start_sets);
 
 private:
     ConnectivityGraph g_;
@@ -208,86 +75,88 @@ private:
 
 Toolbox::Impl::Impl(ConnectivityGraph g)
     : g_   (std::move(g))
-    , pvol_(g_.numCells(), 0.0)
+    , pvol_()
     , flux_(ConnectionValues::NumConnections{ 0 },
             ConnectionValues::NumPhases     { 0 })
 {}
 
 void
-Toolbox::Impl::assign(const PoreVolume& pv)
+Toolbox::Impl::assignPoreVolume(const std::vector<double>& pvol)
 {
-    if (pv.data.size() != pvol_.size()) {
+    if (pvol.size() != g_.numCells()) {
         throw std::logic_error("Inconsistently sized input "
                                "pore-volume field");
     }
 
-    pvol_ = pv.data;
+    pvol_ = pvol;
 }
 
 void
-Toolbox::Impl::assign(const ConnectionFlux& flux)
+Toolbox::Impl::assignConnectionFlux(const ConnectionValues& flux)
 {
-    if (flux.data.numConnections() != g_.numConnections()) {
+    if (flux.numConnections() != g_.numConnections()) {
         throw std::logic_error("Inconsistently sized input "
                                "flux field");
     }
 
-    flux_ = flux.data;
+    flux_ = flux;
     conn_built_ = false;
 }
 
 Toolbox::Forward
-Toolbox::Impl::injDiag(const StartCells& start)
+Toolbox::Impl::injDiag(const std::vector<CellSet>& start_sets)
 {
+    // Check that we have specified pore volume and fluxes.
+    if (pvol_.empty() || flux_.numConnections() == 0) {
+        throw std::logic_error("Must set pore volumes and fluxes before calling diagnostics.");
+    }
+
     if (!conn_built_) {
         buildAssembledConnections();
     }
 
-    using Soln       = Solution::Impl;
-    using ToF        = Soln::TimeOfFlight;
-    using Conc       = Soln::Concentration;
-
-    using SolnPtr = std::unique_ptr<Soln>;
-
-    SolnPtr x(new Soln());
+    Solution sol;
+    using ToF = Solution::TimeOfFlight;
+    using Conc = Solution::TracerConcentration;
 
     TracerTofSolver solver(inj_conn_, pvol_);
-    x->assignToF(solver.solveGlobal(start.points));
+    sol.assignGlobalToF(solver.solveGlobal(start_sets));
 
-    for (const auto& pt : start.points) {
-        auto solution = solver.solveLocal(pt);
-        x->assign(pt.id(), ToF{ solution.tof });
-        x->assign(pt.id(), Conc{ solution.concentration });
+    for (const auto& start : start_sets) {
+        auto solution = solver.solveLocal(start);
+        sol.assign(start.id(), ToF{ solution.tof });
+        sol.assign(start.id(), Conc{ solution.concentration });
     }
 
-    return Forward{ Solution(std::move(x)) };
+    return Forward{ sol };
 }
 
 Toolbox::Reverse
-Toolbox::Impl::prodDiag(const StartCells& start)
+Toolbox::Impl::prodDiag(const std::vector<CellSet>& start_sets)
 {
+    // Check that we have specified pore volume and fluxes.
+    if (pvol_.empty() || flux_.numConnections() == 0) {
+        throw std::logic_error("Must set pore volumes and fluxes before calling diagnostics.");
+    }
+
     if (!conn_built_) {
         buildAssembledConnections();
     }
 
-    using Soln       = Solution::Impl;
-    using ToF        = Soln::TimeOfFlight;
-    using Conc       = Soln::Concentration;
-
-    using SolnPtr = std::unique_ptr<Soln>;
-
-    SolnPtr x(new Soln());
+    Solution sol;
+    using ToF = Solution::TimeOfFlight;
+    using Conc = Solution::TracerConcentration;
 
     TracerTofSolver solver(prod_conn_, pvol_);
-    x->assignToF(solver.solveGlobal(start.points));
+    sol.assignGlobalToF(solver.solveGlobal(start_sets));
 
-    for (const auto& pt : start.points) {
-        auto solution = solver.solveLocal(pt);
-        x->assign(pt.id(), ToF{ solution.tof });
-        x->assign(pt.id(), Conc{ solution.concentration });
+    for (const auto& start : start_sets) {
+        auto solution = solver.solveLocal(start);
+        sol.assign(start.id(), ToF{ solution.tof });
+        sol.assign(start.id(), Conc{ solution.concentration });
     }
 
-    return Reverse{ Solution(std::move(x)) };
+    return Reverse{ sol };
 }
 
 void
@@ -328,52 +197,6 @@ Toolbox::Impl::buildAssembledConnections()
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// Class Solution
-// ---------------------------------------------------------------------
-
-Solution::~Solution()
-{}
-
-Solution::
-Solution(const FlowDiagnostics::Solution& rhs)
-    : pImpl_(new Impl(*rhs.pImpl_))
-{}
-
-Solution::
-Solution(FlowDiagnostics::Solution&& rhs)
-    : pImpl_(std::move(rhs.pImpl_))
-{}
-
-Solution::
-Solution(std::unique_ptr<Impl> pImpl)
-    : pImpl_(std::move(pImpl))
-{}
-
-std::vector<CellSetID>
-Solution::startPoints() const
-{
-    return pImpl_->startPoints();
-}
-
-const std::vector<double>&
-Solution::timeOfFlight() const
-{
-    return pImpl_->timeOfFlight();
-}
-
-CellSetValues
-Solution::timeOfFlight(const CellSetID& tracer) const
-{
-    return pImpl_->timeOfFlight(tracer);
-}
-
-CellSetValues
-Solution::concentration(const CellSetID& tracer) const
-{
-    return pImpl_->concentration(tracer);
-}
-
-// ---------------------------------------------------------------------
 // Class Toolbox
 // ---------------------------------------------------------------------
 
@@ -398,34 +221,30 @@ Toolbox::operator=(Toolbox&& rhs)
     return *this;
 }
 
-Toolbox&
-Toolbox::assign(const PoreVolume& pv)
+void
+Toolbox::assignPoreVolume(const std::vector<double>& pv)
 {
-    pImpl_->assign(pv);
-
-    return *this;
+    pImpl_->assignPoreVolume(pv);
 }
 
-Toolbox&
-Toolbox::assign(const ConnectionFlux& flux)
+void
+Toolbox::assignConnectionFlux(const ConnectionValues& flux)
 {
-    pImpl_->assign(flux);
-
-    return *this;
+    pImpl_->assignConnectionFlux(flux);
 }
 
 Toolbox::Forward
 Toolbox::
-computeInjectionDiagnostics(const StartCells& start)
+computeInjectionDiagnostics(const std::vector<CellSet>& start_sets)
 {
-    return pImpl_->injDiag(start);
+    return pImpl_->injDiag(start_sets);
 }
 
 Toolbox::Reverse
 Toolbox::
-computeProductionDiagnostics(const StartCells& start)
+computeProductionDiagnostics(const std::vector<CellSet>& start_sets)
 {
-    return pImpl_->prodDiag(start);
+    return pImpl_->prodDiag(start_sets);
 }
 
 

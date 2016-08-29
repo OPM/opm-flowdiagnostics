@@ -23,6 +23,9 @@
 
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/CellSetValues.hpp>
+#include <opm/flowdiagnostics/ConnectivityGraph.hpp>
+#include <opm/flowdiagnostics/ConnectionValues.hpp>
+#include <opm/flowdiagnostics/Solution.hpp>
 
 #include <memory>
 #include <vector>
@@ -32,52 +35,6 @@ namespace Opm
 namespace FlowDiagnostics
 {
 
-    // These classes are not defined for the moment, definitions will
-    // depend on needs and be refined as we progress.
-
-    // Nodes are cells, edges are connections.  Wells not included.
-    class ConnectivityGraph;
-
-    // One element per phase for each connection.
-    class ConnectionValues;
-
-    /// Toolbox for running flow diagnostics.
-    class Toolbox;
-
-    /// Results from diagnostics computations.
-    class Solution
-    {
-    public:
-        ~Solution();
-
-        Solution(const Solution& rhs);
-        Solution(Solution&& rhs);
-
-        /// Ids of stored tracer solutions.
-        std::vector<CellSetID> startPoints() const;
-
-        /// Time-of-flight field from all start points.
-        const std::vector<double>& timeOfFlight() const;
-
-        /// Time-of-flight field restricted to single tracer region.
-        CellSetValues timeOfFlight(const CellSetID& tracer) const;
-
-        /// The computed tracer field corresponding to a single tracer.
-        ///
-        /// The \c tracer must correspond to an id passed in
-        /// computeX...Diagnostics().
-        CellSetValues concentration(const CellSetID& tracer) const;
-
-        friend class Toolbox;
-
-    private:
-        class Impl;
-
-        explicit Solution(std::unique_ptr<Impl> pImpl);
-
-        std::unique_ptr<Impl> pImpl_;
-    };
-
     /// Toolbox for running flow diagnostics.
     class Toolbox
     {
@@ -85,25 +42,20 @@ namespace FlowDiagnostics
         /// Construct from known neighbourship relation.
         explicit Toolbox(const ConnectivityGraph& connectivity);
 
+        /// Destructor.
         ~Toolbox();
 
+        /// Move constructor.
         Toolbox(Toolbox&& rhs);
+
+        /// Move assignment.
         Toolbox& operator=(Toolbox&& rhs);
 
-        struct PoreVolume
-        {
-            const std::vector<double>& data;
-        };
+        /// Assign pore volumes associated with each active cell.
+        void assignPoreVolume(const std::vector<double>& pv);
 
-        struct ConnectionFlux
-        {
-            const ConnectionValues& data;
-        };
-
-        struct StartCells
-        {
-            const std::vector<CellSet>& points;
-        };
+        /// Assign fluxes associated with each connection.
+        void assignConnectionFlux(const ConnectionValues& flux);
 
         struct Forward
         {
@@ -115,12 +67,9 @@ namespace FlowDiagnostics
             const Solution fd;
         };
 
-        Toolbox& assign(const PoreVolume&     pv);
-        Toolbox& assign(const ConnectionFlux& flux);
-
         /// Compute forward time-of-flight and tracer solutions.
         ///
-        /// An element of \code start.points \endcode provides a set of
+        /// An element of \code start_sets \endcode provides a set of
         /// starting locations for a single tracer.
         ///
         /// Forward time-of-flight is the time needed for a neutral fluid
@@ -128,12 +77,15 @@ namespace FlowDiagnostics
         /// point in the model.  The tracer solutions identify cells that
         /// are flooded by injectors.
         ///
-        /// The IDs of the \code start.points \endcode must be unique.
-        Forward computeInjectionDiagnostics(const StartCells& start);
+        /// You must have called assignPoreVolume() and assignConnectionFlux()
+        /// before calling this method.
+        ///
+        /// The IDs of the \code start_sets \endcode must be unique.
+        Forward computeInjectionDiagnostics(const std::vector<CellSet>& start_sets);
 
         /// Compute reverse time-of-flight and tracer solutions.
         ///
-        /// An element of \code start.points \endcode provides a set of
+        /// An element of \code start_sets \endcode provides a set of
         /// starting locations for a single tracer.
         ///
         /// Reverse time-of-flight is the time needed for a neutral fluid
@@ -141,8 +93,11 @@ namespace FlowDiagnostics
         /// sink in the model.  The tracer solutions identify cells that are
         /// drained by producers.
         ///
-        /// The IDs of the \code start.points \endcode must be unique.
-        Reverse computeProductionDiagnostics(const StartCells& start);
+        /// You must have called assignPoreVolume() and assignConnectionFlux()
+        /// before calling this method.
+        ///
+        /// The IDs of the \code start_sets \endcode must be unique.
+        Reverse computeProductionDiagnostics(const std::vector<CellSet>& start_sets);
 
     private:
         class Impl;
