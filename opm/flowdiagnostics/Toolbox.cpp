@@ -80,6 +80,7 @@ Toolbox::Impl::Impl(ConnectivityGraph g)
     , pvol_()
     , flux_(ConnectionValues::NumConnections{ 0 },
             ConnectionValues::NumPhases     { 0 })
+    , inflow_flux_()
 {}
 
 void
