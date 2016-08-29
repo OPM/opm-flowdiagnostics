@@ -162,28 +162,22 @@ BOOST_AUTO_TEST_SUITE(FlowDiagnostics_Toolbox)
 
 BOOST_AUTO_TEST_CASE (Constructor)
 {
-    using FDT = Toolbox;
-
     const auto cas = Setup(2, 2);
 
-    FDT diagTool(cas.connectivity());
+    Toolbox diagTool(cas.connectivity());
 
-    diagTool
-        .assign(FDT::PoreVolume{ cas.poreVolume() })
-        .assign(FDT::ConnectionFlux{ cas.flux() });
+    diagTool.assignPoreVolume(cas.poreVolume());
+    diagTool.assignConnectionFlux(cas.flux());
 }
 
 BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
 {
-    using FDT = Toolbox;
-
     const auto cas = Setup(2, 2);
 
-    FDT diagTool(cas.connectivity());
+    Toolbox diagTool(cas.connectivity());
 
-    diagTool
-        .assign(FDT::PoreVolume{ cas.poreVolume() })
-        .assign(FDT::ConnectionFlux{ cas.flux() });
+    diagTool.assignPoreVolume(cas.poreVolume());
+    diagTool.assignConnectionFlux(cas.flux());
 
     auto start = std::vector<CellSet>{};
     {
@@ -205,7 +199,7 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
     }
 
     const auto fwd = diagTool
-        .computeInjectionDiagnostics(FDT::StartCells{start});
+        .computeInjectionDiagnostics(start);
 
     // Global ToF field (accumulated from all injectors)
     {
@@ -306,15 +300,14 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     const auto& graph = cas.connectivity();
 
     Toolbox diagTool(graph);
-
-    diagTool.assign(Toolbox::PoreVolume{ cas.poreVolume() });
+    diagTool.assignPoreVolume(cas.poreVolume());
     ConnectionValues flux(ConnectionValues::NumConnections{ graph.numConnections() },
                           ConnectionValues::NumPhases     { 1 });
     const size_t nconn = cas.connectivity().numConnections();
     for (size_t conn = 0; conn < nconn; ++conn) {
         flux(ConnectionValues::ConnID{conn}, ConnectionValues::PhaseID{0}) = 0.3;
     }
-    diagTool.assign(Toolbox::ConnectionFlux{ flux });
+    diagTool.assignConnectionFlux(flux);
 
     auto start = std::vector<CellSet>{};
     {
@@ -335,8 +328,8 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         s.insert(cas.connectivity().numCells() - 1);
     }
 
-    const auto fwd = diagTool.computeInjectionDiagnostics(Toolbox::StartCells{start});
-    const auto rev = diagTool.computeProductionDiagnostics(Toolbox::StartCells{start});
+    const auto fwd = diagTool.computeInjectionDiagnostics(start);
+    const auto rev = diagTool.computeProductionDiagnostics(start);
 
     // Global ToF field (accumulated from all injectors)
     {
