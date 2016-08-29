@@ -58,6 +58,10 @@ namespace FlowDiagnostics
         void assignConnectionFlux(const ConnectionValues& flux);
 
         /// Assign inflow fluxes, typically from wells.
+        ///
+        /// Inflow fluxes (injection) should be positive, outflow
+        /// fluxes (production) should be negative, both should be
+        /// given in the inflow_flux argument passed to this method.
         void assignInflowFlux(const CellSetValues& inflow_flux);
 
         struct Forward

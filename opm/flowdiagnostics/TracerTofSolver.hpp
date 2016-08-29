@@ -49,9 +49,10 @@ namespace FlowDiagnostics
     public:
         /// Initialize solver with a given flow graph (a weighted,
         /// directed asyclic graph) containing the out-fluxes from
-        /// each cell, and pore volumes.
+        /// each cell, pore volumes and inflow sources (positive).
         TracerTofSolver(const AssembledConnections& graph,
-                        const std::vector<double>& pore_volumes);
+                        const std::vector<double>& pore_volumes,
+                        const CellSetValues& source_inflow);
 
         /// Compute the global (combining all sources) time-of-flight of each cell.
         ///
@@ -97,6 +98,7 @@ namespace FlowDiagnostics
 
         TracerTofSolver(const AssembledConnections& graph,
                         const std::vector<double>& pore_volumes,
+                        const CellSetValues& source_inflow,
                         InOutFluxComputer&& inout);
 
         void prepareForSolve();

@@ -36,6 +36,19 @@ namespace Opm
 namespace FlowDiagnostics
 {
 
+    namespace
+    {
+        std::vector<double> expandSparse(const int n, const CellSetValues& v)
+        {
+            std::vector<double> r(n, 0.0);
+            const int num_items = v.cellValueCount();
+            for (int item = 0; item < num_items; ++item) {
+                auto data = v.cellValue(item);
+                r[data.first] = data.second;
+            }
+            return r;
+        }
+    } // anonymous namespace
 
 
 
@@ -65,8 +78,9 @@ namespace FlowDiagnostics
 
 
     TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
-                                     const std::vector<double>& pore_volumes)
-        : TracerTofSolver(graph, pore_volumes, InOutFluxComputer(graph))
+                                     const std::vector<double>& pore_volumes,
+                                     const CellSetValues& source_inflow)
+        : TracerTofSolver(graph, pore_volumes, source_inflow, InOutFluxComputer(graph))
     {
     }
 
@@ -78,11 +92,13 @@ namespace FlowDiagnostics
     // const members of the class.
     TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
                                      const std::vector<double>& pore_volumes,
+                                     const CellSetValues& source_inflow,
                                      InOutFluxComputer&& inout)
         : g_(graph)
         , pv_(pore_volumes)
         , influx_(std::move(inout.influx))
         , outflux_(std::move(inout.outflux))
+        , source_term_(expandSparse(pore_volumes.size(), source_inflow))
     {
     }
 
@@ -138,8 +154,6 @@ namespace FlowDiagnostics
     {
         // Reset instance variables.
         const int num_cells = pv_.size();
-        source_term_.clear();
-        source_term_.resize(num_cells, 0.0);
         upwind_contrib_.clear();
         upwind_contrib_.resize(num_cells, 0.0);
         tof_.clear();
