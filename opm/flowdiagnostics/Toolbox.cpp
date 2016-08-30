@@ -130,7 +130,7 @@ Toolbox::Impl::assignInflowFlux(const CellSetValues& inflow_flux)
         if (data.second > 0.0) {
             only_inflow_flux_.addCellValue(data.first, data.second);
         } else {
-            only_outflow_flux_.addCellValue(data.first, data.second);
+            only_outflow_flux_.addCellValue(data.first, -data.second);
         }
     }
 }
