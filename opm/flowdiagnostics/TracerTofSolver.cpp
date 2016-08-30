@@ -111,7 +111,7 @@ namespace FlowDiagnostics
         // Reset solver variables and set source terms.
         prepareForSolve();
         for (const CellSet& startset : all_startsets) {
-            setupSourceTerms(startset);
+            setupStartArray(startset);
         }
 
         // Compute topological ordering and solve.
@@ -130,7 +130,7 @@ namespace FlowDiagnostics
     {
         // Reset solver variables and set source terms.
         prepareForSolve();
-        setupSourceTerms(startset);
+        setupStartArray(startset);
 
         // Compute local topological ordering and solve.
         computeLocalOrdering(startset);
@@ -154,6 +154,8 @@ namespace FlowDiagnostics
     {
         // Reset instance variables.
         const int num_cells = pv_.size();
+        is_start_.clear();
+        is_start_.resize(num_cells, 0);
         upwind_contrib_.clear();
         upwind_contrib_.resize(num_cells, 0.0);
         tof_.clear();
@@ -167,10 +169,10 @@ namespace FlowDiagnostics
 
 
 
-    void TracerTofSolver::setupSourceTerms(const CellSet& startset)
+    void TracerTofSolver::setupStartArray(const CellSet& startset)
     {
         for (const int cell : startset) {
-            source_term_[cell] = std::numeric_limits<double>::infinity(); // std::max(outflux_[cell] - influx_[cell], 0.0); // Ignore negative sources.
+            is_start_[cell] = 1;
         }
     }
 
@@ -269,35 +271,15 @@ namespace FlowDiagnostics
 
     void TracerTofSolver::solveSingleCell(const int cell)
     {
-        // Note: comment below is not matching the current implementation,
-        // but kept as a reference since we have not settled the formulation
-        // 100% yet.
-        //
-        // If source cell, we have influx not accounted for, and
-        // downwind_flux > upwind_flux_[cell]. However the tof at
-        // the influx (wells typically) is zero, so there is no
-        // contribution. However, we will customary halve the tof
-        // for that cell.
-        // If sink cell, we have outflux not accounted for, and
-        // downwind_flux < upwind_flux_[cell]. In that case we
-        // account for it by assuming incompressibility and making
-        // them equal.
-        //const double downwind_flux = std::max(outflux_[cell], influx_[cell]);
-
-        const double total_influx_ = influx_[cell] + source_term_[cell];
+        // Compute influx.
+        double source = 2.0 * source_term_[cell];  // Initial tof for well cell equal to half fill time.
+        if (source == 0.0 && is_start_[cell]) {
+            source = std::numeric_limits<double>::infinity(); // Gives 0 tof in start cell.
+        }
+        const double total_influx_ = influx_[cell] + 2.0 * source_term_[cell];
 
         // Compute tof.
         tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/total_influx_;
-
-        // Halve if source (well inflow) cell.
-        // if (upwind_contrib_[cell] == 0.0) {
-        //     tof_[cell] = 0.5 * tof_[cell];
-        // }
-
-        // Set tof to zero if cell has no reservoir influx (assume it is a source).
-        if (influx_[cell] == 0.0) {
-            tof_[cell] = 0.0;
-        }
 
         // Set contribution for my downwind cells (if any).
         for (const auto& conn : g_.cellNeighbourhood(cell)) {

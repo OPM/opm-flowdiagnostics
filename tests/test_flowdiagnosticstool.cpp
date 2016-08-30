@@ -299,34 +299,42 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     const auto cas = Setup(5, 1);
     const auto& graph = cas.connectivity();
 
-    Toolbox diagTool(graph);
-    diagTool.assignPoreVolume(cas.poreVolume());
+    // Create fluxes.
     ConnectionValues flux(ConnectionValues::NumConnections{ graph.numConnections() },
                           ConnectionValues::NumPhases     { 1 });
     const size_t nconn = cas.connectivity().numConnections();
     for (size_t conn = 0; conn < nconn; ++conn) {
         flux(ConnectionValues::ConnID{conn}, ConnectionValues::PhaseID{0}) = 0.3;
     }
+
+    // Create well in/out flows.
+    CellSetValues wellflow;
+    wellflow.addCellValue(0, 0.3);
+    wellflow.addCellValue(4, -0.3);
+
+    Toolbox diagTool(graph);
+    diagTool.assignPoreVolume(cas.poreVolume());
     diagTool.assignConnectionFlux(flux);
+    diagTool.assignInflowFlux(wellflow);
 
     auto start = std::vector<CellSet>{};
-    // {
-    //     start.emplace_back();
+    {
+        start.emplace_back();
 
-    //     auto& s = start.back();
+        auto& s = start.back();
 
-    //     s.identify(CellSetID("I-1"));
-    //     s.insert(0);
-    // }
+        s.identify(CellSetID("I-1"));
+        s.insert(0);
+    }
 
-    // {
-    //     start.emplace_back();
+    {
+        start.emplace_back();
 
-    //     auto& s = start.back();
+        auto& s = start.back();
 
-    //     s.identify(CellSetID("I-2"));
-    //     s.insert(cas.connectivity().numCells() - 1);
-    // }
+        s.identify(CellSetID("I-2"));
+        s.insert(cas.connectivity().numCells() - 1);
+    }
 
     const auto fwd = diagTool.computeInjectionDiagnostics(start);
     const auto rev = diagTool.computeProductionDiagnostics(start);
@@ -336,7 +344,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = fwd.fd.timeOfFlight();
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
-        std::vector<double> expected = { 0.0, 1.0, 2.0, 3.0, 4.0 };
+        std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 4.5 };
         check_is_close(tof, expected);
     }
 
@@ -345,7 +353,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = rev.fd.timeOfFlight();
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
-        std::vector<double> expected = { 4.0, 3.0, 2.0, 1.0, 0.0 };
+        std::vector<double> expected = { 4.5, 3.5, 2.5, 1.5, 0.5 };
         check_is_close(tof, expected);
     }
 

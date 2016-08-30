@@ -81,6 +81,7 @@ namespace FlowDiagnostics
         const std::vector<double> influx_;
         const std::vector<double> outflux_;
         std::vector<double> source_term_;
+        std::vector<char> is_start_; // char to avoid the nasty vector<bool> specialization
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
         std::vector<double> upwind_contrib_;
@@ -103,7 +104,7 @@ namespace FlowDiagnostics
 
         void prepareForSolve();
 
-        void setupSourceTerms(const CellSet& startset);
+        void setupStartArray(const CellSet& startset);
 
         void computeOrdering();
 
