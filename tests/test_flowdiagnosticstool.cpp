@@ -299,15 +299,23 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     const auto cas = Setup(5, 1);
     const auto& graph = cas.connectivity();
 
-    Toolbox diagTool(graph);
-    diagTool.assignPoreVolume(cas.poreVolume());
+    // Create fluxes.
     ConnectionValues flux(ConnectionValues::NumConnections{ graph.numConnections() },
                           ConnectionValues::NumPhases     { 1 });
     const size_t nconn = cas.connectivity().numConnections();
     for (size_t conn = 0; conn < nconn; ++conn) {
         flux(ConnectionValues::ConnID{conn}, ConnectionValues::PhaseID{0}) = 0.3;
     }
+
+    // Create well in/out flows.
+    CellSetValues wellflow;
+    wellflow.addCellValue(0, 0.3);
+    wellflow.addCellValue(4, -0.3);
+
+    Toolbox diagTool(graph);
+    diagTool.assignPoreVolume(cas.poreVolume());
     diagTool.assignConnectionFlux(flux);
+    diagTool.assignInflowFlux(wellflow);
 
     auto start = std::vector<CellSet>{};
     {
@@ -371,7 +379,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     // Tracer-ToF
     {
         const auto tof = fwd.fd
-            .timeOfFlight(CellSetID("I-1"));
+            .timeOfFlight(CellSetID("I-2"));
 
         for (decltype(tof.cellValueCount())
                  i = 0, n = tof.cellValueCount();

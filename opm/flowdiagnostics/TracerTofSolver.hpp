@@ -49,9 +49,10 @@ namespace FlowDiagnostics
     public:
         /// Initialize solver with a given flow graph (a weighted,
         /// directed asyclic graph) containing the out-fluxes from
-        /// each cell, and pore volumes.
+        /// each cell, pore volumes and inflow sources (positive).
         TracerTofSolver(const AssembledConnections& graph,
-                        const std::vector<double>& pore_volumes);
+                        const std::vector<double>& pore_volumes,
+                        const CellSetValues& source_inflow);
 
         /// Compute the global (combining all sources) time-of-flight of each cell.
         ///
@@ -77,9 +78,12 @@ namespace FlowDiagnostics
 
         const AssembledConnections& g_;
         const std::vector<double>& pv_;
+        const std::vector<double> influx_;
+        const std::vector<double> outflux_;
+        std::vector<double> source_term_;
+        std::vector<char> is_start_; // char to avoid the nasty vector<bool> specialization
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
-        std::vector<double> upwind_influx_;
         std::vector<double> upwind_contrib_;
         std::vector<double> tof_;
         int num_multicell_ = 0;
@@ -87,9 +91,26 @@ namespace FlowDiagnostics
         int max_iter_multicell_ = 0;
         const double gauss_seidel_tol_ = 1e-3;
 
+        // --------------  Private helper class --------------
+
+        struct InOutFluxComputer;
+
         // --------------  Private methods --------------
 
+        TracerTofSolver(const AssembledConnections& graph,
+                        const std::vector<double>& pore_volumes,
+                        const CellSetValues& source_inflow,
+                        InOutFluxComputer&& inout);
+
+        void prepareForSolve();
+
+        void setupStartArray(const CellSet& startset);
+
         void computeOrdering();
+
+        void computeLocalOrdering(const CellSet& startset);
+
+        void solve();
 
         void solveSingleCell(const int cell);
 

@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 
@@ -35,12 +36,69 @@ namespace Opm
 namespace FlowDiagnostics
 {
 
+    namespace
+    {
+        std::vector<double> expandSparse(const int n, const CellSetValues& v)
+        {
+            std::vector<double> r(n, 0.0);
+            const int num_items = v.cellValueCount();
+            for (int item = 0; item < num_items; ++item) {
+                auto data = v.cellValue(item);
+                r[data.first] = data.second;
+            }
+            return r;
+        }
+    } // anonymous namespace
+
+
+
+    // This computes both in and outflux with a single traversal of the graph.
+    struct TracerTofSolver::InOutFluxComputer
+    {
+        InOutFluxComputer(const AssembledConnections& graph)
+        {
+            const int num_cells = graph.numRows();
+            influx.resize(num_cells, 0.0);
+            outflux.resize(num_cells, 0.0);
+            for (int cell = 0; cell < num_cells; ++cell) {
+                const auto nb = graph.cellNeighbourhood(cell);
+                for (const auto& conn : nb) {
+                    influx[conn.neighbour] += conn.weight;
+                    outflux[cell] += conn.weight;
+                }
+            }
+        }
+
+        std::vector<double> influx;
+        std::vector<double> outflux;
+    };
+
+
+
 
 
     TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
-                                     const std::vector<double>& pore_volumes)
-        : g_(graph),
-          pv_(pore_volumes)
+                                     const std::vector<double>& pore_volumes,
+                                     const CellSetValues& source_inflow)
+        : TracerTofSolver(graph, pore_volumes, source_inflow, InOutFluxComputer(graph))
+    {
+    }
+
+
+
+
+
+    // The InOutFluxComputer is used so that influx_ and outflux_ can be
+    // const members of the class.
+    TracerTofSolver::TracerTofSolver(const AssembledConnections& graph,
+                                     const std::vector<double>& pore_volumes,
+                                     const CellSetValues& source_inflow,
+                                     InOutFluxComputer&& inout)
+        : g_(graph)
+        , pv_(pore_volumes)
+        , influx_(std::move(inout.influx))
+        , outflux_(std::move(inout.outflux))
+        , source_term_(expandSparse(pore_volumes.size(), source_inflow))
     {
     }
 
@@ -50,33 +108,15 @@ namespace FlowDiagnostics
 
     std::vector<double> TracerTofSolver::solveGlobal(const std::vector<CellSet>& all_startsets)
     {
-        static_cast<void>(all_startsets); // TODO: use to compute tracer.
-
-        // Reset instance variables.
-        const int num_cells = pv_.size();
-        upwind_influx_.clear();
-        upwind_influx_.resize(num_cells, 0.0);
-        upwind_contrib_.clear();
-        upwind_contrib_.resize(num_cells, 0.0);
-        tof_.clear();
-        tof_.resize(num_cells, -1e100);
-        num_multicell_ = 0;
-        max_size_multicell_ = 0;
-        max_iter_multicell_ = 0;
-
-        // Compute topological ordering.
-        computeOrdering();
-
-        // Solve each component.
-        const int num_components = component_starts_.size() - 1;
-        for (int comp = 0; comp < num_components; ++comp) {
-            const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
-            if (comp_size == 1) {
-                solveSingleCell(sequence_[component_starts_[comp]]);
-            } else {
-                solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
-            }
+        // Reset solver variables and set source terms.
+        prepareForSolve();
+        for (const CellSet& startset : all_startsets) {
+            setupStartArray(startset);
         }
+
+        // Compute topological ordering and solve.
+        computeOrdering();
+        solve();
 
         // Return computed time-of-flight.
         return tof_;
@@ -88,8 +128,52 @@ namespace FlowDiagnostics
 
     TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSet& startset)
     {
-        static_cast<void>(startset);
-        return LocalSolution{ CellSetValues{}, CellSetValues{} };
+        // Reset solver variables and set source terms.
+        prepareForSolve();
+        setupStartArray(startset);
+
+        // Compute local topological ordering and solve.
+        computeLocalOrdering(startset);
+        solve();
+
+        // Return computed time-of-flight.
+        CellSetValues local_tof;
+        const int num_elements = component_starts_.back();
+        for (int element = 0; element < num_elements; ++element) {
+            const int cell = sequence_[element];
+            local_tof.addCellValue(cell, tof_[cell]);
+        }
+        return LocalSolution{ local_tof, CellSetValues{} }; // TODO also return tracer
+    }
+
+
+
+
+
+    void TracerTofSolver::prepareForSolve()
+    {
+        // Reset instance variables.
+        const int num_cells = pv_.size();
+        is_start_.clear();
+        is_start_.resize(num_cells, 0);
+        upwind_contrib_.clear();
+        upwind_contrib_.resize(num_cells, 0.0);
+        tof_.clear();
+        tof_.resize(num_cells, -1e100);
+        num_multicell_ = 0;
+        max_size_multicell_ = 0;
+        max_iter_multicell_ = 0;
+    }
+
+
+
+
+
+    void TracerTofSolver::setupStartArray(const CellSet& startset)
+    {
+        for (const int cell : startset) {
+            is_start_[cell] = 1;
+        }
     }
 
 
@@ -128,38 +212,79 @@ namespace FlowDiagnostics
 
 
 
+    void TracerTofSolver::computeLocalOrdering(const CellSet& startset)
+    {
+        // Extract start cells.
+        std::vector<int> startcells(startset.begin(), startset.end());
+
+        // Compute reverse topological ordering.
+        const size_t num_cells = pv_.size();
+        assert(g_.startPointers().size() == num_cells + 1);
+        struct ResultDeleter { void operator()(TarjanSCCResult* x) { destroy_tarjan_sccresult(x); } };
+        std::unique_ptr<TarjanSCCResult, ResultDeleter> result;
+        {
+            struct WorkspaceDeleter { void operator()(TarjanWorkSpace* x) { destroy_tarjan_workspace(x); } };
+            std::unique_ptr<TarjanWorkSpace, WorkspaceDeleter> ws(create_tarjan_workspace(num_cells));
+            result.reset(tarjan_reachable_sccs(num_cells, g_.startPointers().data(), g_.neighbourhood().data(),
+                                               startcells.size(), startcells.data(), ws.get()));
+        }
+
+        // Must reverse ordering, since Tarjan computes reverse ordering.
+        const int ok = tarjan_reverse_sccresult(result.get());
+        if (!ok) {
+            throw std::runtime_error("Failed to reverse topological ordering in TracerTofSolver::computeOrdering()");
+        }
+
+        // Extract data from solution.
+        sequence_.resize(num_cells);
+        const int num_comp = tarjan_get_numcomponents(result.get());
+        component_starts_.resize(num_comp + 1);
+        component_starts_[0] = 0;
+        for (int comp = 0; comp < num_comp; ++comp) {
+            const TarjanComponent tc = tarjan_get_strongcomponent(result.get(), comp);
+            std::copy(tc.vertex, tc.vertex + tc.size, sequence_.begin() + component_starts_[comp]);
+            component_starts_[comp + 1] = component_starts_[comp] + tc.size;
+        }
+    }
+
+
+
+
+
+    void TracerTofSolver::solve()
+    {
+        // Solve each component.
+        const int num_components = component_starts_.size() - 1;
+        for (int comp = 0; comp < num_components; ++comp) {
+            const int comp_size = component_starts_[comp + 1] - component_starts_[comp];
+            if (comp_size == 1) {
+                solveSingleCell(sequence_[component_starts_[comp]]);
+            } else {
+                solveMultiCell(comp_size, &sequence_[component_starts_[comp]]);
+            }
+        }
+    }
+
+
+
+
+
     void TracerTofSolver::solveSingleCell(const int cell)
     {
-        // Compute downwind fluxes.
-        double downwind_flux = 0.0;
-        for (const auto& conn : g_.cellNeighbourhood(cell)) {
-            downwind_flux += conn.weight;
+        // Compute influx.
+        double source = 2.0 * source_term_[cell];  // Initial tof for well cell equal to half fill time.
+        if (source == 0.0 && is_start_[cell]) {
+            source = std::numeric_limits<double>::infinity(); // Gives 0 tof in start cell.
         }
-
-        // If source cell, we have influx not accounted for, and
-        // downwind_flux > upwind_flux_[cell]. However the tof at
-        // the influx (wells typically) is zero, so there is no
-        // contribution. However, we will customary halve the tof
-        // for that cell.
-        // If sink cell, we have outflux not accounted for, and
-        // downwind_flux < upwind_flux_[cell]. In that case we
-        // account for it by assuming incompressibility and making
-        // them equal.
-        downwind_flux = std::max(downwind_flux, upwind_influx_[cell]);
+        const double total_influx_ = influx_[cell] + 2.0 * source_term_[cell];
 
         // Compute tof.
-        tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/downwind_flux;
-
-        // Halve if source (well inflow) cell.
-        if (upwind_influx_[cell] == 0.0) {
-            tof_[cell] = 0.5 * tof_[cell];
-        }
+        tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/total_influx_;
 
         // Set contribution for my downwind cells (if any).
         for (const auto& conn : g_.cellNeighbourhood(cell)) {
             const int downwind_cell = conn.neighbour;
             const double flux = conn.weight;
-            upwind_influx_[downwind_cell] += flux;
             upwind_contrib_[downwind_cell] += tof_[cell] * flux;
         }
     }

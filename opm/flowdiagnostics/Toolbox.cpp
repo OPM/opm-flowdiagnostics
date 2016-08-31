@@ -66,7 +66,8 @@ private:
 
     std::vector<double> pvol_;
     ConnectionValues    flux_;
-    CellSetValues       inflow_flux_;
+    CellSetValues       only_inflow_flux_;
+    CellSetValues       only_outflow_flux_;
 
     AssembledConnections inj_conn_;
     AssembledConnections prod_conn_;
@@ -80,7 +81,8 @@ Toolbox::Impl::Impl(ConnectivityGraph g)
     , pvol_()
     , flux_(ConnectionValues::NumConnections{ 0 },
             ConnectionValues::NumPhases     { 0 })
-    , inflow_flux_()
+    , only_inflow_flux_()
+    , only_outflow_flux_()
 {}
 
 void
@@ -109,7 +111,28 @@ Toolbox::Impl::assignConnectionFlux(const ConnectionValues& flux)
 void
 Toolbox::Impl::assignInflowFlux(const CellSetValues& inflow_flux)
 {
-    inflow_flux_ = inflow_flux;
+    // Count the inflow (>0) fluxes.
+    const int num_items = inflow_flux.cellValueCount();
+    int num_inflows = 0;
+    for (int item = 0; item < num_items; ++item) {
+        if (inflow_flux.cellValue(item).second > 0.0) {
+            ++num_inflows;
+        }
+    }
+
+    // Reserve memory.
+    only_inflow_flux_ = CellSetValues(num_inflows);
+    only_outflow_flux_ = CellSetValues(num_items - num_inflows);
+
+    // Build in- and out-flow structures.
+    for (int item = 0; item < num_items; ++item) {
+        auto data = inflow_flux.cellValue(item);
+        if (data.second > 0.0) {
+            only_inflow_flux_.addCellValue(data.first, data.second);
+        } else {
+            only_outflow_flux_.addCellValue(data.first, -data.second);
+        }
+    }
 }
 
 Toolbox::Forward
@@ -128,7 +151,7 @@ Toolbox::Impl::injDiag(const std::vector<CellSet>& start_sets)
     using ToF = Solution::TimeOfFlight;
     using Conc = Solution::TracerConcentration;
 
-    TracerTofSolver solver(inj_conn_, pvol_);
+    TracerTofSolver solver(inj_conn_, pvol_, only_inflow_flux_);
     sol.assignGlobalToF(solver.solveGlobal(start_sets));
 
     for (const auto& start : start_sets) {
@@ -156,7 +179,7 @@ Toolbox::Impl::prodDiag(const std::vector<CellSet>& start_sets)
     using ToF = Solution::TimeOfFlight;
     using Conc = Solution::TracerConcentration;
 
-    TracerTofSolver solver(prod_conn_, pvol_);
+    TracerTofSolver solver(prod_conn_, pvol_, only_outflow_flux_);
     sol.assignGlobalToF(solver.solveGlobal(start_sets));
 
     for (const auto& start : start_sets) {
