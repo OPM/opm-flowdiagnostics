@@ -271,15 +271,22 @@ namespace FlowDiagnostics
 
     void TracerTofSolver::solveSingleCell(const int cell)
     {
-        // Compute influx.
+        // Compute influx (divisor of tof expression).
         double source = 2.0 * source_term_[cell];  // Initial tof for well cell equal to half fill time.
         if (source == 0.0 && is_start_[cell]) {
             source = std::numeric_limits<double>::infinity(); // Gives 0 tof in start cell.
         }
-        const double total_influx_ = influx_[cell] + 2.0 * source_term_[cell];
+        const double total_influx_ = influx_[cell] + source;
 
-        // Compute tof.
-        tof_[cell] = (pv_[cell] + upwind_contrib_[cell])/total_influx_;
+        // Compute effective pv (dividend of tof expression).
+        const double eff_pv = pv_[cell] + upwind_contrib_[cell];
+
+        // Compute (capped) tof.
+        if (total_influx_ < eff_pv / max_tof_) {
+            tof_[cell] = max_tof_;
+        } else {
+            tof_[cell] = eff_pv / total_influx_;
+        }
 
         // Set contribution for my downwind cells (if any).
         for (const auto& conn : g_.cellNeighbourhood(cell)) {
