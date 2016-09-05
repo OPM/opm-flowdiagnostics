@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = fwd.fd.timeOfFlight();
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
-        std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 4.5 };
+        std::vector<double> expected = { 0.5, 1.5, 2.5, 3.5, 0.0 };
         check_is_close(tof, expected);
     }
 
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = rev.fd.timeOfFlight();
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
-        std::vector<double> expected = { 4.5, 3.5, 2.5, 1.5, 0.5 };
+        std::vector<double> expected = { 0.0, 3.5, 2.5, 1.5, 0.5 };
         check_is_close(tof, expected);
     }
 
