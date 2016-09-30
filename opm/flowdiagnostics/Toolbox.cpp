@@ -69,8 +69,8 @@ private:
     CellSetValues       only_inflow_flux_;
     CellSetValues       only_outflow_flux_;
 
-    AssembledConnections inj_conn_;
-    AssembledConnections prod_conn_;
+    AssembledConnections downstream_conn_;
+    AssembledConnections upstream_conn_;
     bool conn_built_ = false;
 
     void buildAssembledConnections();
@@ -151,7 +151,7 @@ Toolbox::Impl::injDiag(const std::vector<CellSet>& start_sets)
     using ToF = Solution::TimeOfFlight;
     using Conc = Solution::TracerConcentration;
 
-    TracerTofSolver solver(inj_conn_, pvol_, only_inflow_flux_);
+    TracerTofSolver solver(downstream_conn_, upstream_conn_, pvol_, only_inflow_flux_);
     sol.assignGlobalToF(solver.solveGlobal(start_sets));
 
     for (const auto& start : start_sets) {
@@ -179,7 +179,7 @@ Toolbox::Impl::prodDiag(const std::vector<CellSet>& start_sets)
     using ToF = Solution::TimeOfFlight;
     using Conc = Solution::TracerConcentration;
 
-    TracerTofSolver solver(prod_conn_, pvol_, only_outflow_flux_);
+    TracerTofSolver solver(upstream_conn_, downstream_conn_, pvol_, only_outflow_flux_);
     sol.assignGlobalToF(solver.solveGlobal(start_sets));
 
     for (const auto& start : start_sets) {
@@ -197,8 +197,8 @@ Toolbox::Impl::buildAssembledConnections()
     // Create the data structures needed by the tracer/tof solver.
     const size_t num_connections = g_.numConnections();
     const size_t num_phases = flux_.numPhases();
-    inj_conn_ = AssembledConnections();
-    prod_conn_ = AssembledConnections();
+    downstream_conn_ = AssembledConnections();
+    upstream_conn_ = AssembledConnections();
     for (size_t conn_idx = 0; conn_idx < num_connections; ++conn_idx) {
         auto cells = g_.connection(conn_idx);
         using ConnID = ConnectionValues::ConnID;
@@ -209,16 +209,16 @@ Toolbox::Impl::buildAssembledConnections()
             connection_flux += flux_(ConnID{conn_idx}, PhaseID{phase});
         }
         if (connection_flux > 0.0) {
-            inj_conn_.addConnection(cells.first, cells.second, connection_flux);
-            prod_conn_.addConnection(cells.second, cells.first, connection_flux);
+            downstream_conn_.addConnection(cells.first, cells.second, connection_flux);
+            upstream_conn_.addConnection(cells.second, cells.first, connection_flux);
         } else {
-            inj_conn_.addConnection(cells.second, cells.first, -connection_flux);
-            prod_conn_.addConnection(cells.first, cells.second, -connection_flux);
+            downstream_conn_.addConnection(cells.second, cells.first, -connection_flux);
+            upstream_conn_.addConnection(cells.first, cells.second, -connection_flux);
         }
     }
     const int num_cells = g_.numCells();
-    inj_conn_.compress(num_cells);
-    prod_conn_.compress(num_cells);
+    downstream_conn_.compress(num_cells);
+    upstream_conn_.compress(num_cells);
 
     // Mark as built (until flux changed).
     conn_built_ = true;
