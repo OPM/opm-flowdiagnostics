@@ -278,7 +278,7 @@ namespace FlowDiagnostics
     void TracerTofSolver::solveSingleCell(const int cell)
     {
         // Compute influx (divisor of tof expression).
-        double source = 2.0 * source_term_[cell];  // Initial tof for well cell equal to half fill time.
+        double source = source_term_[cell];  // Initial tof for well cell equal to fill time.
         if (source == 0.0 && is_start_[cell]) {
             source = std::numeric_limits<double>::infinity(); // Gives 0 tof in start cell.
         }
