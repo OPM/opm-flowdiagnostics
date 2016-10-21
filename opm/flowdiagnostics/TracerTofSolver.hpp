@@ -88,6 +88,7 @@ namespace FlowDiagnostics
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
         std::vector<double> tof_;
+        std::vector<double> tracer_;
         int num_multicell_ = 0;
         int max_size_multicell_ = 0;
         int max_iter_multicell_ = 0;

@@ -141,12 +141,14 @@ namespace FlowDiagnostics
 
         // Return computed time-of-flight.
         CellSetValues local_tof;
+        CellSetValues local_tracer;
         const int num_elements = component_starts_.back();
         for (int element = 0; element < num_elements; ++element) {
             const int cell = sequence_[element];
             local_tof.addCellValue(cell, tof_[cell]);
+            local_tracer.addCellValue(cell, tracer_[cell]);
         }
-        return LocalSolution{ local_tof, CellSetValues{} }; // TODO also return tracer
+        return LocalSolution{ local_tof, local_tracer };
     }
 
 
@@ -161,6 +163,8 @@ namespace FlowDiagnostics
         is_start_.resize(num_cells, 0);
         tof_.clear();
         tof_.resize(num_cells, -1e100);
+        tracer_.clear();
+        tracer_.resize(num_cells, -1e100);
         num_multicell_ = 0;
         max_size_multicell_ = 0;
         max_iter_multicell_ = 0;
@@ -298,15 +302,18 @@ namespace FlowDiagnostics
         }
 
         // Compute upwind contribution.
-        double upwind_contrib = 0.0;
+        double upwind_tof_contrib = 0.0;
+        double upwind_tracer_contrib = 0.0;
         for (const auto& conn : g_reverse_.cellNeighbourhood(cell)) {
             const int upwind_cell = conn.neighbour;
             const double flux = conn.weight;
-            upwind_contrib += tof_[upwind_cell] * flux;
+            upwind_tof_contrib += tof_[upwind_cell] * flux;
+            upwind_tracer_contrib += tracer_[upwind_cell] * flux;
         }
 
-        // Compute time-of-flight.
-        tof_[cell] = (pv_[cell] + upwind_contrib) / total_influx;
+        // Compute time-of-flight and tracer.
+        tof_[cell] = (pv_[cell] + upwind_tof_contrib) / total_influx;
+        tracer_[cell] = is_start_[cell] ? 1.0 : upwind_tracer_contrib / total_influx;
     }
 
 
