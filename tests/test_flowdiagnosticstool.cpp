@@ -412,6 +412,96 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
                                << v.second);
         }
     }
+
+
+    // Tracer-ToF
+    {
+        const auto tof = fwd.fd
+            .timeOfFlight(CellSetID("I-1"));
+
+        for (decltype(tof.cellValueCount())
+                 i = 0, n = tof.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = tof.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+
+    // Tracer Concentration
+    {
+        const auto conc = fwd.fd
+            .concentration(CellSetID("I-1"));
+
+        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
+                           conc.cellValueCount());
+
+        for (decltype(conc.cellValueCount())
+                 i = 0, n = conc.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = conc.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+
+
+    // Add a start point in the middle.
+    {
+        start.emplace_back();
+
+        auto& s = start.back();
+
+        s.identify(CellSetID("Middle"));
+        s.insert(cas.connectivity().numCells()/2);
+    }
+
+    const auto fwd2 = diagTool.computeInjectionDiagnostics(start);
+    const auto rev2 = diagTool.computeProductionDiagnostics(start);
+
+    // Tracer-ToF
+    {
+        const auto tof = fwd2.fd
+            .timeOfFlight(CellSetID("Middle"));
+
+        for (decltype(tof.cellValueCount())
+                 i = 0, n = tof.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = tof.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+
+    // Tracer Concentration
+    {
+        const auto conc = fwd2.fd
+            .concentration(CellSetID("Middle"));
+
+        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
+                           conc.cellValueCount());
+
+        for (decltype(conc.cellValueCount())
+                 i = 0, n = conc.cellValueCount();
+             i < n; ++i)
+        {
+            const auto v = conc.cellValue(i);
+
+            BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
+                               << v.first << "] = "
+                               << v.second);
+        }
+    }
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
