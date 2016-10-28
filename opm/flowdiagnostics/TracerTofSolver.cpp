@@ -162,9 +162,9 @@ namespace FlowDiagnostics
         is_start_.clear();
         is_start_.resize(num_cells, 0);
         tof_.clear();
-        tof_.resize(num_cells, -1e100);
+        tof_.resize(num_cells, 0.0);
         tracer_.clear();
-        tracer_.resize(num_cells, -1e100);
+        tracer_.resize(num_cells, 0.0);
         num_multicell_ = 0;
         max_size_multicell_ = 0;
         max_iter_multicell_ = 0;
