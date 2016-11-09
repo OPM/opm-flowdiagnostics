@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
                                << v.first << "] = "
                                << v.second);
-            BOOST_CHECK_EQUAL(v.second, expected[i]);
+            BOOST_CHECK_CLOSE(v.second, expected[i], 1.0e-10);
         }
     }
 
@@ -415,7 +415,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
                                << v.first << "] = "
                                << v.second);
-            BOOST_CHECK_EQUAL(v.second, expected[i]);
+            BOOST_CHECK_CLOSE(v.second, expected[i], 1.0e-10);
         }
     }
 
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
                                << v.first << "] = "
                                << v.second);
-            BOOST_CHECK_EQUAL(v.second, expected[i]);
+            BOOST_CHECK_CLOSE(v.second, expected[i], 1.0e-10);
         }
     }
 
@@ -458,7 +458,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
                                << v.first << "] = "
                                << v.second);
-            BOOST_CHECK_EQUAL(v.second, expected[i]);
+            BOOST_CHECK_CLOSE(v.second, expected[i], 1.0e-10);
         }
     }
 
@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
                                << v.first << "] = "
                                << v.second);
-            BOOST_CHECK_EQUAL(v.second, expected[i]);
+            BOOST_CHECK_CLOSE(v.second, expected[i], 1.0e-10);
         }
     }
 
@@ -514,7 +514,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
                                << v.first << "] = "
                                << v.second);
-            BOOST_CHECK_EQUAL(v.second, expected[i]);
+            BOOST_CHECK_CLOSE(v.second, expected[i], 1.0e-10);
         }
     }
 
