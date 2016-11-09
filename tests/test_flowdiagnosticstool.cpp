@@ -381,6 +381,10 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = fwd.fd
             .timeOfFlight(CellSetID("I-2"));
 
+
+        std::vector<double> expected = { 0.0 };
+        BOOST_REQUIRE_EQUAL(tof.cellValueCount(), expected.size());
+
         for (decltype(tof.cellValueCount())
                  i = 0, n = tof.cellValueCount();
              i < n; ++i)
@@ -390,6 +394,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
                                << v.first << "] = "
                                << v.second);
+            BOOST_CHECK_EQUAL(v.second, expected[i]);
         }
     }
 
@@ -398,8 +403,8 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto conc = fwd.fd
             .concentration(CellSetID("I-2"));
 
-        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
-                           conc.cellValueCount());
+        std::vector<double> expected = { 1.0 };
+        BOOST_REQUIRE_EQUAL(conc.cellValueCount(), expected.size());
 
         for (decltype(conc.cellValueCount())
                  i = 0, n = conc.cellValueCount();
@@ -410,6 +415,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
                                << v.first << "] = "
                                << v.second);
+            BOOST_CHECK_EQUAL(v.second, expected[i]);
         }
     }
 
@@ -419,6 +425,9 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = fwd.fd
             .timeOfFlight(CellSetID("I-1"));
 
+        std::vector<double> expected = { 1.0, 2.0, 3.0, 4.0, 5.0 };
+        BOOST_REQUIRE_EQUAL(tof.cellValueCount(), expected.size());
+
         for (decltype(tof.cellValueCount())
                  i = 0, n = tof.cellValueCount();
              i < n; ++i)
@@ -428,6 +437,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
                                << v.first << "] = "
                                << v.second);
+            BOOST_CHECK_EQUAL(v.second, expected[i]);
         }
     }
 
@@ -436,8 +446,8 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto conc = fwd.fd
             .concentration(CellSetID("I-1"));
 
-        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
-                           conc.cellValueCount());
+        std::vector<double> expected = { 1.0, 1.0, 1.0, 1.0, 1.0 };
+        BOOST_REQUIRE_EQUAL(conc.cellValueCount(), expected.size());
 
         for (decltype(conc.cellValueCount())
                  i = 0, n = conc.cellValueCount();
@@ -448,6 +458,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
                                << v.first << "] = "
                                << v.second);
+            BOOST_CHECK_EQUAL(v.second, expected[i]);
         }
     }
 
@@ -470,6 +481,9 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = fwd2.fd
             .timeOfFlight(CellSetID("Middle"));
 
+        std::vector<double> expected = { 0.0, 1.0, 2.0 };
+        BOOST_REQUIRE_EQUAL(tof.cellValueCount(), expected.size());
+
         for (decltype(tof.cellValueCount())
                  i = 0, n = tof.cellValueCount();
              i < n; ++i)
@@ -479,6 +493,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> ToF["
                                << v.first << "] = "
                                << v.second);
+            BOOST_CHECK_EQUAL(v.second, expected[i]);
         }
     }
 
@@ -487,8 +502,8 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto conc = fwd2.fd
             .concentration(CellSetID("Middle"));
 
-        BOOST_TEST_MESSAGE("conc.cellValueCount() = " <<
-                           conc.cellValueCount());
+        std::vector<double> expected = { 1.0, 1.0, 1.0 };
+        BOOST_REQUIRE_EQUAL(conc.cellValueCount(), expected.size());
 
         for (decltype(conc.cellValueCount())
                  i = 0, n = conc.cellValueCount();
@@ -499,6 +514,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
             BOOST_TEST_MESSAGE("[" << i << "] -> Conc["
                                << v.first << "] = "
                                << v.second);
+            BOOST_CHECK_EQUAL(v.second, expected[i]);
         }
     }
 
