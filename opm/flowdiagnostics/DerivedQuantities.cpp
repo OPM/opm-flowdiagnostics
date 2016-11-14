@@ -22,12 +22,42 @@
 #endif // HAVE_CONFIG_H
 
 #include <opm/flowdiagnostics/DerivedQuantities.hpp>
+#include <algorithm>
 #include <numeric>
 
 namespace Opm
 {
 namespace FlowDiagnostics
 {
+
+    namespace {
+        /// Helper function for flowCapacityStorageCapacityCurve().
+        template <class InputValues, class ExtractElement>
+        std::vector<double>
+        cumulativeNormalized(const InputValues& input,
+                             ExtractElement&& extract)
+        {
+            // Extract quantity.
+            auto q = std::vector<double>{};
+            q.reserve(input.size() + 1);
+            q.push_back(0.0);
+            for (const auto& e : input) {
+                q.push_back(extract(e));
+            }
+
+            // Accumulate and normalize.
+            std::partial_sum(q.begin(), q.end(), q.begin());
+            const auto t = q.back();
+            for (auto& qi : q) {
+                qi /= t;
+            }
+
+            return q;
+        }
+
+    } // anonymous namespace
+
+
 
     /// The F-Phi curve.
     ///
@@ -57,31 +87,10 @@ namespace FlowDiagnostics
         }
         std::sort(time_and_pv.begin(), time_and_pv.end());
 
-        // Compute Phi.
-        std::vector<double> Phi(n + 1);
-        Phi[0] = 0.0;
-        for (int ii = 0; ii < n; ++ii) {
-            Phi[ii+1] = time_and_pv[ii].second;
-        }
-        std::partial_sum(Phi.begin(), Phi.end(), Phi.begin());
-        const double vt = Phi.back(); // Total pore volume.
-        for (int ii = 1; ii < n+1; ++ii) { // Note limits of loop.
-            Phi[ii] /= vt; // Normalize Phi.
-        }
+        auto Phi = cumulativeNormalized(time_and_pv, [](const D2& i) { return i.first; });
+        auto F = cumulativeNormalized(time_and_pv, [](const D2& i) { return i.second / i.first; });
 
-        // Compute F.
-        std::vector<double> F(n + 1);
-        F[0] = 0.0;
-        for (int ii = 0; ii < n; ++ii) {
-            F[ii+1] = time_and_pv[ii].second / time_and_pv[ii].first;
-        }
-        std::partial_sum(F.begin(), F.end(), F.begin());
-        const double ft = F.back(); // Total flux.
-        for (int ii = 1; ii < n+1; ++ii) { // Note limits of loop.
-            F[ii] /= ft; // Normalize Phi.
-        }
-
-        return std::make_pair(Phi, F);
+        return Graph{std::move(Phi), std::move(F)};
     }
 
 
