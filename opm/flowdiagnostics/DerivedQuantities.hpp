@@ -68,9 +68,7 @@ namespace FlowDiagnostics
     ///
     /// The sweep efficiency is analogue to 1D displacement using
     /// the F-Phi curve as flux function.
-    Graph sweepEfficiency(const Toolbox::Forward& injector_solution,
-                          const Toolbox::Reverse& producer_solution,
-                          const std::vector<double>& pore_volume);
+    Graph sweepEfficiency(const Graph& flowcap_storagecap_curve);
 
 
     /// Compute pore volume associated with an injector-producer pair.

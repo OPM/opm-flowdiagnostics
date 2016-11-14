@@ -125,12 +125,35 @@ namespace FlowDiagnostics
     ///
     /// The sweep efficiency is analogue to 1D displacement using
     /// the F-Phi curve as flux function.
-    Graph sweepEfficiency(const Toolbox::Forward& ,//injector_solution,
-                          const Toolbox::Reverse& ,//producer_solution,
-                          const std::vector<double>& )//pore_volume)
+    Graph sweepEfficiency(const Graph& flowcap_storagecap_curve)
     {
-        return Graph();
+        const auto& storagecap = flowcap_storagecap_curve.first;
+        const auto& flowcap = flowcap_storagecap_curve.second;
+        if (flowcap.size() != storagecap.size()) {
+            throw std::runtime_error("sweepEfficiency(): Inconsistent sizes in input graph.");
+        }
+
+        // Compute tD and Ev simultaneously,
+        // skipping identical Phi data points.
+        const int n = flowcap.size();
+        std::vector<double> Ev;
+        std::vector<double> tD;
+        tD.reserve(n);
+        Ev.reserve(n);
+        tD.push_back(0.0);
+        Ev.push_back(0.0);
+        for (int ii = 1; ii < n; ++ii) { // Note loop limits.
+            const double fd = flowcap[ii] - flowcap[ii-1];
+            const double sd = storagecap[ii] - storagecap[ii-1];
+            if (fd != 0.0) {
+                tD.push_back(sd/fd);
+                Ev.push_back(storagecap[ii] + (1.0 - flowcap[ii]) * tD.back());
+            }
+        }
+
+        return std::make_pair(tD, Ev);
     }
+
 
 
 

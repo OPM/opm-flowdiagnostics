@@ -281,13 +281,23 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         };
         BOOST_CHECK_CLOSE(lorenzCoefficient(inbetweenLorenzGraph), 0.3, 1e-10);
 
-        // BOOST_TEST_MESSAGE("==== Sweep efficiency");
-        // const Graph expectedSweep{
-        //     { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 },
-        //     { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 }
-        // };
-        // check_is_close(sweepEfficiency(fwd, rev, pv), expectedSweep);
-
+        BOOST_TEST_MESSAGE("==== Sweep efficiency");
+        const Graph expectedSweep{
+            { 0.0, 1.0, 1.0, 1.0, 1.0, 1.0 },
+            { 0.0, 1.0, 1.0, 1.0, 1.0, 1.0 },
+        };
+        BOOST_CHECK_THROW(sweepEfficiency(wrongGraph), std::runtime_error);
+        check_is_close(sweepEfficiency(fcapscap), expectedSweep);
+        const Graph expSweepMax {
+            { 0.0 },
+            { 0.0 }
+        };
+        check_is_close(sweepEfficiency(maxLorenzGraph), expSweepMax);
+        const Graph expSweepInbetween { // Verified against MRST version
+            { 0.0, 0.6, 2.2 },
+            { 0.0, 0.6, 1.0 }
+        };
+        check_is_close(sweepEfficiency(inbetweenLorenzGraph), expSweepInbetween);
 
         // const double expectedVol12 = 5.0;
         // BOOST_CHECK_CLOSE(dq.injectorProducerPairVolume(CellSetID("I-1"), CellSetID("I-2")), expectedVol12, tolerance);
