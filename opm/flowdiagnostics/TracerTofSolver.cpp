@@ -41,9 +41,7 @@ namespace FlowDiagnostics
         std::vector<double> expandSparse(const int n, const CellSetValues& v)
         {
             std::vector<double> r(n, 0.0);
-            const int num_items = v.cellValueCount();
-            for (int item = 0; item < num_items; ++item) {
-                auto data = v.cellValue(item);
+            for (const auto& data : v) {
                 r[data.first] = data.second;
             }
             return r;
@@ -145,10 +143,10 @@ namespace FlowDiagnostics
         const int num_elements = component_starts_.back();
         for (int element = 0; element < num_elements; ++element) {
             const int cell = sequence_[element];
-            local_tof.addCellValue(cell, tof_[cell]);
-            local_tracer.addCellValue(cell, tracer_[cell]);
+            local_tof[cell] = tof_[cell];
+            local_tracer[cell] = tracer_[cell];
         }
-        return LocalSolution{ local_tof, local_tracer };
+        return LocalSolution{ std::move(local_tof), std::move(local_tracer) };
     }
 
 

@@ -222,9 +222,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     const auto& flux = cas.flux();
 
     // Create well in/out flows.
-    CellSetValues wellflow;
-    wellflow.addCellValue(0, 0.3);
-    wellflow.addCellValue(4, -0.3);
+    CellSetValues wellflow = { {0, 0.3}, {4, -0.3} };
 
     Toolbox diagTool(graph);
     diagTool.assignPoreVolume(pv);
