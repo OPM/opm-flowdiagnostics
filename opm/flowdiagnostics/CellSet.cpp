@@ -54,10 +54,14 @@ CellSetID::operator<(const CellSetID& other) const
 
 // =====================================================================
 
-void
-CellSet::identify(CellSetID id)
+CellSet::CellSet(CellSetID id)
+    : id_(std::move(id))
 {
-    id_ = std::move(id);
+}
+
+CellSet::CellSet(CellSetID id, const std::vector<int>& cells)
+    : id_(std::move(id)), iset_(cells.begin(), cells.end())
+{
 }
 
 const CellSetID&

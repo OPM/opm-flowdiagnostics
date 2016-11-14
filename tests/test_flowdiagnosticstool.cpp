@@ -179,24 +179,8 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
     diagTool.assignPoreVolume(cas.poreVolume());
     diagTool.assignConnectionFlux(cas.flux());
 
-    auto start = std::vector<CellSet>{};
-    {
-        start.emplace_back();
-
-        auto& s = start.back();
-
-        s.identify(CellSetID("I-1"));
-        s.insert(0);
-    }
-
-    {
-        start.emplace_back();
-
-        auto& s = start.back();
-
-        s.identify(CellSetID("I-2"));
-        s.insert(cas.connectivity().numCells() - 1);
-    }
+    auto start = std::vector<CellSet>{ CellSet(CellSetID("I-1"), {0}),
+                                       CellSet(CellSetID("I-2"), {int(cas.connectivity().numCells()) - 1}) };
 
     const auto fwd = diagTool
         .computeInjectionDiagnostics(start);
@@ -267,7 +251,6 @@ BOOST_AUTO_TEST_CASE (InjectionDiagnostics)
 
 
 
-
 namespace {
 
     template <class Collection1, class Collection2>
@@ -317,24 +300,8 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     diagTool.assignConnectionFlux(flux);
     diagTool.assignInflowFlux(wellflow);
 
-    auto start = std::vector<CellSet>{};
-    {
-        start.emplace_back();
-
-        auto& s = start.back();
-
-        s.identify(CellSetID("I-1"));
-        s.insert(0);
-    }
-
-    {
-        start.emplace_back();
-
-        auto& s = start.back();
-
-        s.identify(CellSetID("I-2"));
-        s.insert(cas.connectivity().numCells() - 1);
-    }
+    auto start = std::vector<CellSet>{ CellSet(CellSetID("I-1"), {0}),
+                                       CellSet(CellSetID("I-2"), {int(cas.connectivity().numCells()) - 1}) };
 
     const auto fwd = diagTool.computeInjectionDiagnostics(start);
     const auto rev = diagTool.computeProductionDiagnostics(start);
@@ -465,12 +432,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
 
     // Add a start point in the middle.
     {
-        start.emplace_back();
-
-        auto& s = start.back();
-
-        s.identify(CellSetID("Middle"));
-        s.insert(cas.connectivity().numCells()/2);
+        start.emplace_back(CellSet(CellSetID("Middle"), {int(cas.connectivity().numCells())/2}));
     }
 
     const auto fwd2 = diagTool.computeInjectionDiagnostics(start);
