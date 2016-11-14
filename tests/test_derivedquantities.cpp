@@ -299,8 +299,9 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         };
         check_is_close(sweepEfficiency(inbetweenLorenzGraph), expSweepInbetween);
 
-        // const double expectedVol12 = 5.0;
-        // BOOST_CHECK_CLOSE(dq.injectorProducerPairVolume(CellSetID("I-1"), CellSetID("I-2")), expectedVol12, tolerance);
+        const double expectedVol12 = 1.5;
+        const double vol12 = injectorProducerPairVolume(fwd, rev, pv, CellSetID("I-1"), CellSetID("P-1"));
+        BOOST_CHECK_CLOSE(vol12, expectedVol12, 1e-10);
     }
 
 }

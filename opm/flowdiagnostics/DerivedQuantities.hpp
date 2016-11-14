@@ -70,12 +70,25 @@ namespace FlowDiagnostics
     /// the F-Phi curve as flux function.
     Graph sweepEfficiency(const Graph& flowcap_storagecap_curve);
 
-
     /// Compute pore volume associated with an injector-producer pair.
-    double injectorProducerPairVolume(CellSetID injector, CellSetID producer);
+    double injectorProducerPairVolume(const Toolbox::Forward& injector_solution,
+                                      const Toolbox::Reverse& producer_solution,
+                                      const std::vector<double>& pore_volume,
+                                      const CellSetID& injector,
+                                      const CellSetID& producer);
 
-    /// Compute flux associated with an injector-producer pair.
-    double injectorProducerPairFlux(CellSetID injector, CellSetID producer);
+    /// Compute fluxes associated with an injector-producer pair.
+    ///
+    /// The first flux returned is the injection flux associated with the given producers,
+    /// (equal to the accumulated product of producer tracer values at the injector cells
+    /// with the injection fluxes), the second is the production flux associated with the
+    /// given injectors. In general, they will only be the same for incompressible cases.
+    std::pair<double, double>
+    injectorProducerPairFlux(const Toolbox::Forward& injector_solution,
+                             const Toolbox::Reverse& producer_solution,
+                             const CellSet& injector_cells,
+                             const CellSet& producer_cells,
+                             const CellSetValues& inflow_flux);
 
 
 } // namespace FlowDiagnostics

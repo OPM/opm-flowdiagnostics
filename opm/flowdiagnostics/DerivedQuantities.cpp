@@ -157,5 +157,83 @@ namespace FlowDiagnostics
 
 
 
+
+    /// Compute pore volume associated with an injector-producer pair.
+    double injectorProducerPairVolume(const Toolbox::Forward& injector_solution,
+                                      const Toolbox::Reverse& producer_solution,
+                                      const std::vector<double>& pore_volume,
+                                      const CellSetID& injector,
+                                      const CellSetID& producer)
+    {
+        const auto& inj_tracer = injector_solution.fd.concentration(injector);
+        const auto& prod_tracer = producer_solution.fd.concentration(producer);
+
+        // Create sorted vector of injection tracer.
+        // A better CellSetValues could eliminate the need for this
+        // and the block below (for production tracer).
+        const int n_i = inj_tracer.cellValueCount();
+        std::vector<std::pair<int, double>> sorted_inj_vals(n_i);
+        for (int ii = 0; ii < n_i; ++ii) {
+            sorted_inj_vals[ii] = inj_tracer.cellValue(ii);
+        }
+        std::sort(sorted_inj_vals.begin(), sorted_inj_vals.end());
+
+        // Create sorted vector of production tracer.
+        const int n_p = prod_tracer.cellValueCount();
+        std::vector<std::pair<int, double>> sorted_prod_vals(n_p);
+        for (int ii = 0; ii < n_p; ++ii) {
+            sorted_prod_vals[ii] = prod_tracer.cellValue(ii);
+        }
+        std::sort(sorted_prod_vals.begin(), sorted_prod_vals.end());
+
+        int inj_pos = 0;
+        double volume = 0.0;
+        for (const auto cv : sorted_prod_vals) {
+            while (inj_pos < n_i && sorted_inj_vals[inj_pos].first < cv.first) {
+                ++inj_pos;
+            }
+            if (inj_pos == n_i) {
+                break;
+            }
+            if (sorted_inj_vals[inj_pos].first == cv.first) {
+                volume += pore_volume[cv.first] * sorted_inj_vals[inj_pos].second * cv.second;
+            }
+        }
+        return volume;
+    }
+
+
+
+
+
+    /// Compute fluxes associated with an injector-producer pair.
+    ///
+    /// The first flux returned is the injection flux associated with the given producers,
+    /// (equal to the accumulated product of producer tracer values at the injector cells
+    /// with the injection fluxes), the second is the production flux associated with the
+    /// given injectors. In general, they will only be the same for incompressible cases.
+    std::pair<double, double>
+    injectorProducerPairFlux(const Toolbox::Forward& injector_solution,
+                             const Toolbox::Reverse& producer_solution,
+                             const CellSet& injector_cells,
+                             const CellSet& producer_cells,
+                             const CellSetValues& inflow_flux)
+    {
+        const auto& inj_tracer = injector_solution.fd.concentration(injector_cells.id());
+        const auto& prod_tracer = producer_solution.fd.concentration(producer_cells.id());
+
+        const int n = inflow_flux.cellValueCount();
+        std::vector<std::pair<int, double>> sorted_source(n);
+        for (int ii = 0; ii < n; ++ii) {
+            sorted_source[ii] = inflow_flux.cellValue(ii);
+        }
+        std::sort(sorted_source.begin(), sorted_source.end());
+
+        static_cast<void>(inj_tracer);
+        static_cast<void>(prod_tracer);
+        throw std::logic_error("Unfinished");
+    }
+
+
 } // namespace FlowDiagnostics
 } // namespace Opm
