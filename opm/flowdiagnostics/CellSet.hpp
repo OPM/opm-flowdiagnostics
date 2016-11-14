@@ -41,9 +41,14 @@ namespace FlowDiagnostics
 
         std::string to_string() const;
 
+        bool operator<(const CellSetID& other) const;
+
     private:
         Repr id_;
     };
+
+
+
 
     class CellSet
     {

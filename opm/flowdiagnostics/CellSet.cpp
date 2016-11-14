@@ -46,6 +46,12 @@ CellSetID::to_string() const
     return id_;
 }
 
+bool
+CellSetID::operator<(const CellSetID& other) const
+{
+    return id_ < other.id_;
+}
+
 // =====================================================================
 
 void
