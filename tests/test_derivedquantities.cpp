@@ -251,21 +251,44 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto fwd = diagTool.computeInjectionDiagnostics(inje);
         const auto rev = diagTool.computeProductionDiagnostics(prod);
 
-        BOOST_TEST_MESSAGE("==== F-Phi");
+        BOOST_TEST_MESSAGE("==== F-Phi graph");
         const Graph expectedFPhi{
             { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 },
             { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 }
         };
+        BOOST_CHECK_THROW(flowCapacityStorageCapacityCurve({}, rev, pv), std::runtime_error);
+        BOOST_CHECK_THROW(flowCapacityStorageCapacityCurve(fwd, {}, pv), std::runtime_error);
+        BOOST_CHECK_THROW(flowCapacityStorageCapacityCurve(fwd, rev, {}), std::runtime_error);
         const auto fcapscap = flowCapacityStorageCapacityCurve(fwd, rev, pv);
         check_is_close(fcapscap, expectedFPhi);
+
+        BOOST_TEST_MESSAGE("==== Lorenz coefficient");
+        const double expectedLorenz = 0.0;
+        BOOST_CHECK_CLOSE(lorenzCoefficient(fcapscap), expectedLorenz, 1e-10);
+        const Graph wrongGraph {
+            { 0.0, 0.5, 1.0 },
+            { 1.0, 1.0 }
+        };
+        BOOST_CHECK_THROW(lorenzCoefficient(wrongGraph), std::runtime_error);
+        const Graph maxLorenzGraph {
+            { 0.0, 1.0 },
+            { 1.0, 1.0 }
+        };
+        BOOST_CHECK_CLOSE(lorenzCoefficient(maxLorenzGraph), 1.0, 1e-10);
+        const Graph inbetweenLorenzGraph {
+            { 0.0, 0.45, 1.0 },
+            { 0.0, 0.75, 1.0 }
+        };
+        BOOST_CHECK_CLOSE(lorenzCoefficient(inbetweenLorenzGraph), 0.3, 1e-10);
+
         // BOOST_TEST_MESSAGE("==== Sweep efficiency");
         // const Graph expectedSweep{
         //     { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 },
         //     { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 }
         // };
         // check_is_close(sweepEfficiency(fwd, rev, pv), expectedSweep);
-        // const double expectedLorenz = 0.0;
-        // BOOST_CHECK_CLOSE(lorenzCoefficient(fcapscap), expectedLorenz, 1e-10);
+
+
         // const double expectedVol12 = 5.0;
         // BOOST_CHECK_CLOSE(dq.injectorProducerPairVolume(CellSetID("I-1"), CellSetID("I-2")), expectedVol12, tolerance);
     }

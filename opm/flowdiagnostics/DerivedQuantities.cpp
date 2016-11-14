@@ -43,7 +43,8 @@ namespace FlowDiagnostics
         const auto& ftof = injector_solution.fd.timeOfFlight();
         const auto& rtof = producer_solution.fd.timeOfFlight();
         if (pv.size() != ftof.size() || pv.size() != rtof.size()) {
-            throw std::runtime_error("computeFandPhi(): Input vectors must have same size.");
+            throw std::runtime_error("flowCapacityStorageCapacityCurve(): "
+                                     "Input solutions must have same size.");
         }
 
         // Sort according to total travel time.
@@ -80,7 +81,7 @@ namespace FlowDiagnostics
             F[ii] /= ft; // Normalize Phi.
         }
 
-        return std::make_pair(F, Phi);
+        return std::make_pair(Phi, F);
     }
 
 
@@ -99,9 +100,21 @@ namespace FlowDiagnostics
     /// Note: The coefficient is analogous to the Gini coefficient
     /// of economic theory, where the name Lorenz curve is applied
     /// to what we call the F-Phi curve.
-    double lorenzCoefficient(const Graph& )//flowcap_storagecap_curve)
+    double lorenzCoefficient(const Graph& flowcap_storagecap_curve)
     {
-        return double();
+        const auto& storagecap = flowcap_storagecap_curve.first;
+        const auto& flowcap = flowcap_storagecap_curve.second;
+        if (flowcap.size() != storagecap.size()) {
+            throw std::runtime_error("lorenzCoefficient(): Inconsistent sizes in input graph.");
+        }
+        double integral = 0.0;
+        // Trapezoid quadrature of the curve F(Phi).
+        const int num_intervals = flowcap.size() - 1;
+        for (int ii = 0; ii < num_intervals; ++ii) {
+            const double len = storagecap[ii+1] - storagecap[ii];
+            integral += (flowcap[ii] + flowcap[ii+1]) * len / 2.0;
+        }
+        return 2.0 * (integral - 0.5);
     }
 
 

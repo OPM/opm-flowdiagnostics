@@ -41,6 +41,9 @@ namespace FlowDiagnostics
     /// other interesting diagnostic quantities such as the Lorenz
     /// coefficient. For a technical description see Shavali et
     /// al. (SPE 146446), Shook and Mitchell (SPE 124625).
+    ///
+    /// Returns F (flow capacity) as a function of Phi (storage capacity),
+    /// that is for the returned Graph g, g.first is Phi and g.second is F.
     Graph flowCapacityStorageCapacityCurve(const Toolbox::Forward& injector_solution,
                                            const Toolbox::Reverse& producer_solution,
                                            const std::vector<double>& pore_volume);
@@ -71,10 +74,10 @@ namespace FlowDiagnostics
 
 
     /// Compute pore volume associated with an injector-producer pair.
-    // double injectorProducerPairVolume(CellSetID injector, CellSetID producer);
+    double injectorProducerPairVolume(CellSetID injector, CellSetID producer);
 
     /// Compute flux associated with an injector-producer pair.
-    // double injectorProducerPairFlux(CellSetID injector, CellSetID producer);
+    double injectorProducerPairFlux(CellSetID injector, CellSetID producer);
 
 
 } // namespace FlowDiagnostics
