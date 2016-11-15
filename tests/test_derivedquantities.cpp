@@ -288,6 +288,10 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const double expectedVol12 = 1.5;
         const double vol12 = injectorProducerPairVolume(fwd, rev, pv, CellSetID("I-1"), CellSetID("P-1"));
         BOOST_CHECK_CLOSE(vol12, expectedVol12, 1e-10);
+
+        const auto pairflux = injectorProducerPairFlux(fwd, rev, inje[0], prod[0], wellflow);
+        BOOST_CHECK_CLOSE(pairflux.first, 0.3, 1e-10);
+        BOOST_CHECK_CLOSE(pairflux.second, -0.3, 1e-10);
     }
 
 }

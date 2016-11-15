@@ -192,12 +192,49 @@ namespace FlowDiagnostics
 
 
 
+    namespace {
+
+        // Helper for injectorProducerPairFlux().
+        double pairFlux(const CellSetValues& tracer,
+                        const CellSet& well_cells,
+                        const CellSetValues& inflow_flux,
+                        const bool require_inflow)
+        {
+            double flux = 0.0;
+            for (const int cell : well_cells) {
+                const auto tracer_iter = tracer.find(cell);
+                if (tracer_iter != tracer.end()) {
+                    // Tracer present in cell.
+                    const auto source_iter = inflow_flux.find(cell);
+                    if (source_iter != inflow_flux.end()) {
+                        // Cell has source term.
+                        const double source = source_iter->second;
+                        if ((source > 0.0) == require_inflow) {
+                            // Source term has correct sign.
+                            flux += source * tracer_iter->second;
+                        }
+                    }
+                }
+            }
+            return flux;
+        }
+
+    } // anonymous namespace
+
+
+
+
     /// Compute fluxes associated with an injector-producer pair.
     ///
     /// The first flux returned is the injection flux associated with the given producers,
     /// (equal to the accumulated product of producer tracer values at the injector cells
     /// with the injection fluxes), the second is the production flux associated with the
-    /// given injectors. In general, they will only be the same for incompressible cases.
+    /// given injectors. In general, they will only be the same (up to sign) for
+    /// incompressible cases.
+    ///
+    /// Note: since we consider injecting fluxes positive and producing fluxes negative
+    /// (for the inflow_flux), the first returned element will be positive and the second
+    /// will be negative.
     std::pair<double, double>
     injectorProducerPairFlux(const Toolbox::Forward& injector_solution,
                              const Toolbox::Reverse& producer_solution,
@@ -207,11 +244,9 @@ namespace FlowDiagnostics
     {
         const auto& inj_tracer = injector_solution.fd.concentration(injector_cells.id());
         const auto& prod_tracer = producer_solution.fd.concentration(producer_cells.id());
-
-        static_cast<void>(inflow_flux);
-        static_cast<void>(inj_tracer);
-        static_cast<void>(prod_tracer);
-        throw std::logic_error("Unfinished");
+        const double inj_flux = pairFlux(prod_tracer, injector_cells, inflow_flux, true);
+        const double prod_flux = pairFlux(inj_tracer, producer_cells, inflow_flux, false);
+        return { inj_flux, prod_flux };
     }
 
 

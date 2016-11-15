@@ -84,7 +84,12 @@ namespace FlowDiagnostics
     /// The first flux returned is the injection flux associated with the given producers,
     /// (equal to the accumulated product of producer tracer values at the injector cells
     /// with the injection fluxes), the second is the production flux associated with the
-    /// given injectors. In general, they will only be the same for incompressible cases.
+    /// given injectors. In general, they will only be the same (up to sign) for
+    /// incompressible cases.
+    ///
+    /// Note: since we consider injecting fluxes positive and producing fluxes negative
+    /// (for the inflow_flux), the first returned element will be positive and the second
+    /// will be negative.
     std::pair<double, double>
     injectorProducerPairFlux(const Toolbox::Forward& injector_solution,
                              const Toolbox::Reverse& producer_solution,
