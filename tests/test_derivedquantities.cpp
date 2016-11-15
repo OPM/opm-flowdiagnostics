@@ -222,30 +222,16 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     const auto& flux = cas.flux();
 
     // Create well in/out flows.
-    CellSetValues wellflow;
-    wellflow.addCellValue(0, 0.3);
-    wellflow.addCellValue(4, -0.3);
+    CellSetValues wellflow = { {0, 0.3}, {4, -0.3} };
 
     Toolbox diagTool(graph);
     diagTool.assignPoreVolume(pv);
     diagTool.assignConnectionFlux(flux);
     diagTool.assignInflowFlux(wellflow);
 
-    auto inje = std::vector<CellSet>{};
-    {
-        inje.emplace_back();
-        auto& s = inje.back();
-        s.identify(CellSetID("I-1"));
-        s.insert(0);
-    }
+    auto inje = std::vector<CellSet>{CellSet(CellSetID("I-1"), {0})};
 
-    auto prod = std::vector<CellSet>{};
-    {
-        prod.emplace_back();
-        auto& s = prod.back();
-        s.identify(CellSetID("P-1"));
-        s.insert(graph.numCells() - 1);
-    }
+    auto prod = std::vector<CellSet>{CellSet(CellSetID("P-1"), {int(graph.numCells()) - 1})};
 
     {
         const auto fwd = diagTool.computeInjectionDiagnostics(inje);

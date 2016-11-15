@@ -111,26 +111,13 @@ Toolbox::Impl::assignConnectionFlux(const ConnectionValues& flux)
 void
 Toolbox::Impl::assignInflowFlux(const CellSetValues& inflow_flux)
 {
-    // Count the inflow (>0) fluxes.
-    const int num_items = inflow_flux.cellValueCount();
-    int num_inflows = 0;
-    for (int item = 0; item < num_items; ++item) {
-        if (inflow_flux.cellValue(item).second > 0.0) {
-            ++num_inflows;
-        }
-    }
-
-    // Reserve memory.
-    only_inflow_flux_ = CellSetValues(num_inflows);
-    only_outflow_flux_ = CellSetValues(num_items - num_inflows);
-
-    // Build in- and out-flow structures.
-    for (int item = 0; item < num_items; ++item) {
-        auto data = inflow_flux.cellValue(item);
+    only_inflow_flux_.clear();
+    only_outflow_flux_.clear();
+    for (const auto& data : inflow_flux) {
         if (data.second > 0.0) {
-            only_inflow_flux_.addCellValue(data.first, data.second);
+            only_inflow_flux_[data.first] = data.second;
         } else {
-            only_outflow_flux_.addCellValue(data.first, -data.second);
+            only_outflow_flux_[data.first] = -data.second;
         }
     }
 }
