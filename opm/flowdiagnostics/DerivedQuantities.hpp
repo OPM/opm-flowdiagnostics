@@ -24,6 +24,8 @@
 #include <opm/flowdiagnostics/CellSet.hpp>
 #include <opm/flowdiagnostics/Solution.hpp>
 #include <opm/flowdiagnostics/Toolbox.hpp>
+#include <utility>
+#include <vector>
 
 namespace Opm
 {
