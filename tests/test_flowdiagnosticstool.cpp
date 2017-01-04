@@ -40,7 +40,6 @@
 #include <opm/utility/numeric/RandomVector.hpp>
 
 #include <algorithm>
-#include <iostream>
 
 using namespace Opm::FlowDiagnostics;
 
@@ -299,7 +298,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = fwd.fd.timeOfFlight();
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
-        std::vector<double> expected = { 1.0, 2.0, 3.0, 4.0, 0.0 };
+        std::vector<double> expected = { 1.0, 2.0, 3.0, 4.0, 5.0 };
         check_is_close(tof, expected);
     }
 
@@ -308,7 +307,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const auto tof = rev.fd.timeOfFlight();
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
-        std::vector<double> expected = { 0.0, 4.0, 3.0, 2.0, 1.0 };
+        std::vector<double> expected = { 5.0, 4.0, 3.0, 2.0, 1.0 };
         check_is_close(tof, expected);
     }
 
@@ -499,10 +498,13 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
     // Create fluxes.
     ConnectionValues flux(ConnectionValues::NumConnections{ graph.numConnections() },
                           ConnectionValues::NumPhases     { 1 });
-    // const size_t nconn = cas.connectivity().numConnections();
-    // for (size_t conn = 0; conn < nconn; ++conn) {
-    //     std::cout << graph.connection(conn).first << ' ' << graph.connection(conn).second << std::endl;
-    // }
+    const size_t nconn = cas.connectivity().numConnections();
+    for (size_t conn = 0; conn < nconn; ++conn) {
+        BOOST_TEST_MESSAGE("Connection " << conn << " connects cells "
+                           << graph.connection(conn).first << " and "
+                           << graph.connection(conn).second);
+    }
+
     using C = ConnectionValues::ConnID;
     using P = ConnectionValues::PhaseID;
     flux(C{0}, P{0}) = 0.3;
@@ -532,8 +534,6 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
     {
         const auto tof = fwd.fd.timeOfFlight();
 
-        // for (const auto t : tof) { std::cout << " " << t; }; std::cout << std::endl;
-
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
         std::vector<double> expected = { 1.0, 2.0, 3.0, 1.0, 2.0, 2.5 };
         check_is_close(tof, expected);
@@ -542,8 +542,6 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
     // Global ToF field (accumulated from all producers)
     {
         const auto tof = rev.fd.timeOfFlight();
-
-        // for (const auto t : tof) { std::cout << " " << t; }; std::cout << std::endl;
 
         BOOST_REQUIRE_EQUAL(tof.size(), cas.connectivity().numCells());
         std::vector<double> expected = { 3.5, 2.5, 0.5, 2.5, 1.5, 1.0 };
