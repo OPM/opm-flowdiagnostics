@@ -305,13 +305,14 @@ namespace FlowDiagnostics
         for (const auto& conn : g_reverse_.cellNeighbourhood(cell)) {
             const int upwind_cell = conn.neighbour;
             const double flux = conn.weight;
-            upwind_tof_contrib += tof_[upwind_cell] * flux;
+            upwind_tof_contrib += tof_[upwind_cell] * (tracer_[upwind_cell] != 0.0 ? tracer_[upwind_cell] : 1.0) * flux;
             upwind_tracer_contrib += tracer_[upwind_cell] * flux;
         }
 
         // Compute time-of-flight and tracer.
-        tof_[cell] = (pv_[cell] + upwind_tof_contrib) / total_influx;
         tracer_[cell] = is_start_[cell] ? 1.0 : upwind_tracer_contrib / total_influx;
+        const double tracer = tracer_[cell] != 0.0 ? tracer_[cell] : 1.0;
+        tof_[cell] = (pv_[cell]*tracer + upwind_tof_contrib) / (total_influx*tracer);
     }
 
 
