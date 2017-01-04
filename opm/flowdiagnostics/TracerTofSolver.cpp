@@ -239,7 +239,7 @@ namespace FlowDiagnostics
         }
 
         // Extract data from solution.
-        sequence_.resize(num_cells);
+        sequence_.resize(num_cells); // For local solutions this is the upper limit of the size. TODO: use exact size.
         const int num_comp = tarjan_get_numcomponents(result.get());
         component_starts_.resize(num_comp + 1);
         component_starts_[0] = 0;
