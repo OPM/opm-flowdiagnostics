@@ -198,7 +198,7 @@ Toolbox::Impl::buildAssembledConnections()
         if (connection_flux > 0.0) {
             downstream_conn_.addConnection(cells.first, cells.second, connection_flux);
             upstream_conn_.addConnection(cells.second, cells.first, connection_flux);
-        } else {
+        } else if (connection_flux < 0.0) {
             downstream_conn_.addConnection(cells.second, cells.first, -connection_flux);
             upstream_conn_.addConnection(cells.first, cells.second, -connection_flux);
         }
