@@ -587,20 +587,20 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
         }
     }
 
-    // // Local I-1 tof.
-    // {
-    //     const auto tof = fwd.fd.timeOfFlight(CellSetID("I-1"));
-    //     std::vector<std::pair<int, double>> expected = { {0, 1.0}, {1, 2.0}, {2, 3.5}, {4, 2.5}, {5, 3.0} };
-    //     BOOST_REQUIRE_EQUAL(tof.size(), expected.size());
+    // Local I-1 tof.
+    {
+        const auto tof = fwd.fd.timeOfFlight(CellSetID("I-1"));
+        std::vector<std::pair<int, double>> expected = { {0, 1.0}, {1, 2.0}, {2, 3.5}, {4, 2.5}, {5, 3.0} };
+        BOOST_REQUIRE_EQUAL(tof.size(), expected.size());
 
-    //     int i = 0;
-    //     for (const auto& v : tof) {
-    //         BOOST_TEST_MESSAGE("ToF[" << v.first << "] = " << v.second);
-    //         BOOST_CHECK_EQUAL(v.first, expected[i].first);
-    //         BOOST_CHECK_CLOSE(v.second, expected[i].second, 1.0e-10);
-    //         ++i;
-    //     }
-    // }
+        int i = 0;
+        for (const auto& v : tof) {
+            BOOST_TEST_MESSAGE("ToF[" << v.first << "] = " << v.second);
+            BOOST_CHECK_EQUAL(v.first, expected[i].first);
+            BOOST_CHECK_CLOSE(v.second, expected[i].second, 1.0e-10);
+            ++i;
+        }
+    }
 
     // Local I-2 tracer concentration.
     {
@@ -617,20 +617,20 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
         }
     }
 
-    // // Local I-2 tof.
-    // {
-    //     const auto tof = fwd.fd.timeOfFlight(CellSetID("I-2"));
-    //     std::vector<std::pair<int, double>> expected = { {2, 2.5}, {3, 1.0}, {4, 1.5}, {5, 2.0} };
-    //     BOOST_REQUIRE_EQUAL(tof.size(), expected.size());
+    // Local I-2 tof.
+    {
+        const auto tof = fwd.fd.timeOfFlight(CellSetID("I-2"));
+        std::vector<std::pair<int, double>> expected = { {2, 2.5}, {3, 1.0}, {4, 1.5}, {5, 2.0} };
+        BOOST_REQUIRE_EQUAL(tof.size(), expected.size());
 
-    //     int i = 0;
-    //     for (const auto& v : tof) {
-    //         BOOST_TEST_MESSAGE("ToF[" << v.first << "] = " << v.second);
-    //         BOOST_CHECK_EQUAL(v.first, expected[i].first);
-    //         BOOST_CHECK_CLOSE(v.second, expected[i].second, 1.0e-10);
-    //         ++i;
-    //     }
-    // }
+        int i = 0;
+        for (const auto& v : tof) {
+            BOOST_TEST_MESSAGE("ToF[" << v.first << "] = " << v.second);
+            BOOST_CHECK_EQUAL(v.first, expected[i].first);
+            BOOST_CHECK_CLOSE(v.second, expected[i].second, 1.0e-10);
+            ++i;
+        }
+    }
 
 }
 
