@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
                                         {
                                             return s.id().to_string() == pt.to_string();
                                         });
-                BOOST_CHECK(pos != injstart.end());
+                BOOST_CHECK(pos != s1.end());
             }
         }
     }
