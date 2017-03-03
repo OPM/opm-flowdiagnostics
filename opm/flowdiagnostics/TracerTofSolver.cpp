@@ -321,6 +321,14 @@ namespace FlowDiagnostics
             upwind_tracer_contrib += tracer_[upwind_cell] * flux;
         }
         if (is_start_[cell]) {
+            // For cells tagged as start cells, the tracer value
+            // should get a contribution from the local source term
+            // (which is then considered to be containing the
+            // currently considered tracer).
+            //
+            // Start cells should therefore never have a zero source
+            // term. This may need to change in the future to support
+            // local tracing from arbitrary locations.
             upwind_tracer_contrib += source;
         }
 
