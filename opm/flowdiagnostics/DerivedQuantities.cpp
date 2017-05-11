@@ -70,9 +70,26 @@ namespace FlowDiagnostics
                                            const Toolbox::Reverse& producer_solution,
                                            const std::vector<double>& pv)
     {
-        const auto& ftof = injector_solution.fd.timeOfFlight();
-        const auto& rtof = producer_solution.fd.timeOfFlight();
-        if (pv.size() != ftof.size() || pv.size() != rtof.size()) {
+        return flowCapacityStorageCapacityCurve(injector_solution.fd.timeOfFlight(),
+                                                producer_solution.fd.timeOfFlight(),
+                                                pv);
+    }
+
+
+
+
+    /// The F-Phi curve.
+    ///
+    /// The F-Phi curve is an analogue to the fractional flow
+    /// curve in a 1D displacement. It can be used to compute
+    /// other interesting diagnostic quantities such as the Lorenz
+    /// coefficient. For a technical description see Shavali et
+    /// al. (SPE 146446), Shook and Mitchell (SPE 124625).
+    Graph flowCapacityStorageCapacityCurve(const std::vector<double>& injector_tof,
+                                           const std::vector<double>& producer_tof,
+                                           const std::vector<double>& pv)
+    {
+        if (pv.size() != injector_tof.size() || pv.size() != producer_tof.size()) {
             throw std::runtime_error("flowCapacityStorageCapacityCurve(): "
                                      "Input solutions must have same size.");
         }
@@ -82,7 +99,7 @@ namespace FlowDiagnostics
         typedef std::pair<double, double> D2;
         std::vector<D2> time_and_pv(n);
         for (int ii = 0; ii < n; ++ii) {
-            time_and_pv[ii].first = ftof[ii] + rtof[ii]; // Total travel time.
+            time_and_pv[ii].first = injector_tof[ii] + producer_tof[ii]; // Total travel time.
             time_and_pv[ii].second = pv[ii];
         }
         std::sort(time_and_pv.begin(), time_and_pv.end());
