@@ -1,5 +1,6 @@
 /*
-  Copyright 2015, 2016 SINTEF ICT, Applied Mathematics.
+  Copyright 2015, 2016, 2017 SINTEF ICT, Applied Mathematics.
+  Copyright 2017 Statoil ASA.
 
   This file is part of the Open Porous Media project (OPM).
 
