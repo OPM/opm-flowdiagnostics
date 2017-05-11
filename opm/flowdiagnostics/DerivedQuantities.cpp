@@ -87,7 +87,7 @@ namespace FlowDiagnostics
         }
         std::sort(time_and_pv.begin(), time_and_pv.end());
 
-        auto Phi = cumulativeNormalized(time_and_pv, [](const D2& i) { return i.first; });
+        auto Phi = cumulativeNormalized(time_and_pv, [](const D2& i) { return i.second; });
         auto F = cumulativeNormalized(time_and_pv, [](const D2& i) { return i.second / i.first; });
 
         return Graph{std::move(Phi), std::move(F)};
