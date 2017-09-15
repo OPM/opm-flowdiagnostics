@@ -14,6 +14,9 @@
 #                                                                         #
 ###########################################################################
 
+# Mandatory call to project
+project(opm-flowdiagnostics CXX)
+
 cmake_minimum_required (VERSION 2.8)
 
 # additional search modules
