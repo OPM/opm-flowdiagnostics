@@ -283,6 +283,13 @@ namespace FlowDiagnostics
         for (double& t : tof_) {
             t = std::min(t, max_tof_);
         }
+
+        // Verify that concentration values are greater than zero (i.e. have been visited).
+        for (int cell : sequence_) {
+            if (tracer_[cell] <= 0.0) {
+                throw std::logic_error("Tracer is zero in reachable cell.");
+            }
+        }
     }
 
 
@@ -297,19 +304,6 @@ namespace FlowDiagnostics
             source = std::numeric_limits<double>::infinity(); // Gives 0 tof in start cell.
         }
         const double total_influx = influx_[cell] + source;
-
-        // Cap time-of-flight if time to fill cell is greater than
-        // max_tof_. Note that cells may still have larger than
-        // max_tof_ after solveSingleCell() when including upwind
-        // contributions, and those in turn can affect cells
-        // downstream (so capping in this method will not produce the
-        // same result). All tofs will finally be capped in solve() as
-        // a post-process. The reason for the somewhat convoluted
-        // behaviour is to match existing MRST results.
-        if (total_influx < pv_[cell] / max_tof_) {
-            tof_[cell] = max_tof_;
-            return;
-        }
 
         // Compute upwind contribution.
         double upwind_tof_contrib = 0.0;
@@ -332,14 +326,34 @@ namespace FlowDiagnostics
             upwind_tracer_contrib += source;
         }
 
-        // Compute time-of-flight and tracer.
-        tracer_[cell] = upwind_tracer_contrib / total_influx;
+        // The following should be true if Tarjan was done correctly.
+        assert(total_influx >= 0.0);
+        assert(upwind_tracer_contrib >= 0.0);
 
+        // Compute tracer.
+        if (total_influx == 0.0) {
+            tracer_[cell] = 1.0;
+        } else {
+            tracer_[cell] = upwind_tracer_contrib / total_influx;
+        }
+
+        // Compute time-of-flight.
         if (tracer_[cell] > 0.0) {
             tof_[cell] = (pv_[cell]*tracer_[cell] + upwind_tof_contrib)
                        / (total_influx * tracer_[cell]);
+        } else {
+            tof_[cell] = max_tof_;
         }
-        else {
+
+        // Cap time-of-flight if time to fill cell is greater than
+        // max_tof_. Note that cells may still have larger than
+        // max_tof_ after solveSingleCell() when including upwind
+        // contributions, and those in turn can affect cells
+        // downstream (so capping in this method will not produce the
+        // same result). All tofs will finally be capped in solve() as
+        // a post-process. The reason for the somewhat convoluted
+        // behaviour is to match existing MRST results.
+        if (total_influx < pv_[cell] / max_tof_) {
             tof_[cell] = max_tof_;
         }
     }
