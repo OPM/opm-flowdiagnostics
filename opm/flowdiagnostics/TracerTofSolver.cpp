@@ -143,6 +143,10 @@ namespace FlowDiagnostics
             const int cell = sequence_[element];
             local_tof[cell] = tof_[cell];
             local_tracer[cell] = tracer_[cell];
+            // Verify that tracer values are greater than zero
+            if (tracer_[cell] <= 0.0) {
+                throw std::logic_error("Tracer is zero in non-isolated cell.");
+            }
         }
         return LocalSolution{ std::move(local_tof), std::move(local_tracer) };
     }
@@ -251,7 +255,7 @@ namespace FlowDiagnostics
         }
 
         // Extract data from solution.
-        sequence_.resize(num_cells); // For local solutions this is the upper limit of the size. TODO: use exact size.
+        sequence_.resize(num_cells); // For local solutions this is the upper limit of the size. Will give proper size afterwards.
         const int num_comp = tarjan_get_numcomponents(result.get());
         component_starts_.resize(num_comp + 1);
         component_starts_[0] = 0;
@@ -260,6 +264,7 @@ namespace FlowDiagnostics
             std::copy(tc.vertex, tc.vertex + tc.size, sequence_.begin() + component_starts_[comp]);
             component_starts_[comp + 1] = component_starts_[comp] + tc.size;
         }
+        sequence_.resize(component_starts_.back());
     }
 
 
@@ -298,19 +303,6 @@ namespace FlowDiagnostics
         }
         const double total_influx = influx_[cell] + source;
 
-        // Cap time-of-flight if time to fill cell is greater than
-        // max_tof_. Note that cells may still have larger than
-        // max_tof_ after solveSingleCell() when including upwind
-        // contributions, and those in turn can affect cells
-        // downstream (so capping in this method will not produce the
-        // same result). All tofs will finally be capped in solve() as
-        // a post-process. The reason for the somewhat convoluted
-        // behaviour is to match existing MRST results.
-        if (total_influx < pv_[cell] / max_tof_) {
-            tof_[cell] = max_tof_;
-            return;
-        }
-
         // Compute upwind contribution.
         double upwind_tof_contrib = 0.0;
         double upwind_tracer_contrib = 0.0;
@@ -332,14 +324,38 @@ namespace FlowDiagnostics
             upwind_tracer_contrib += source;
         }
 
-        // Compute time-of-flight and tracer.
-        tracer_[cell] = upwind_tracer_contrib / total_influx;
+        // The following should be true if Tarjan was done correctly.
+        // Note that global Tarjan will also visit isolated cells,
+        // so it is possible to have exactly zero.
+        assert(total_influx >= 0.0);
+        assert(upwind_tracer_contrib >= 0.0);
 
+        // Compute tracer.
+        if (total_influx == 0.0) {
+            assert(upwind_tracer_contrib == 0.0);
+            // Isolated cell.
+            tracer_[cell] = 0.0;
+        } else {
+            tracer_[cell] = upwind_tracer_contrib / total_influx;
+        }
+
+        // Compute time-of-flight.
         if (tracer_[cell] > 0.0) {
             tof_[cell] = (pv_[cell]*tracer_[cell] + upwind_tof_contrib)
                        / (total_influx * tracer_[cell]);
+        } else {
+            tof_[cell] = max_tof_;
         }
-        else {
+
+        // Cap time-of-flight if time to fill cell is greater than
+        // max_tof_. Note that cells may still have larger than
+        // max_tof_ after solveSingleCell() when including upwind
+        // contributions, and those in turn can affect cells
+        // downstream (so capping in this method will not produce the
+        // same result). All tofs will finally be capped in solve() as
+        // a post-process. The reason for the somewhat convoluted
+        // behaviour is to match existing MRST results.
+        if (total_influx < pv_[cell] / max_tof_) {
             tof_[cell] = max_tof_;
         }
     }
