@@ -143,6 +143,10 @@ namespace FlowDiagnostics
             const int cell = sequence_[element];
             local_tof[cell] = tof_[cell];
             local_tracer[cell] = tracer_[cell];
+            // Verify that tracer values are greater than zero
+            if (tracer_[cell] <= 0.0) {
+                throw std::logic_error("Tracer is zero in non-isolated cell.");
+            }
         }
         return LocalSolution{ std::move(local_tof), std::move(local_tracer) };
     }
@@ -284,13 +288,6 @@ namespace FlowDiagnostics
         for (double& t : tof_) {
             t = std::min(t, max_tof_);
         }
-
-        // Verify that concentration values are greater than zero (i.e. have been visited).
-        for (int cell : sequence_) {
-            if (tracer_[cell] <= 0.0) {
-                throw std::logic_error("Tracer is zero in reachable cell.");
-            }
-        }
     }
 
 
@@ -328,12 +325,16 @@ namespace FlowDiagnostics
         }
 
         // The following should be true if Tarjan was done correctly.
+        // Note that global Tarjan will also visit isolated cells,
+        // so it is possible to have exactly zero.
         assert(total_influx >= 0.0);
         assert(upwind_tracer_contrib >= 0.0);
 
         // Compute tracer.
         if (total_influx == 0.0) {
-            tracer_[cell] = 1.0;
+            assert(upwind_tracer_contrib == 0.0);
+            // Isolated cell.
+            tracer_[cell] = 0.0;
         } else {
             tracer_[cell] = upwind_tracer_contrib / total_influx;
         }
