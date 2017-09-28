@@ -251,7 +251,7 @@ namespace FlowDiagnostics
         }
 
         // Extract data from solution.
-        sequence_.resize(num_cells); // For local solutions this is the upper limit of the size. TODO: use exact size.
+        sequence_.resize(num_cells); // For local solutions this is the upper limit of the size. Will give proper size afterwards.
         const int num_comp = tarjan_get_numcomponents(result.get());
         component_starts_.resize(num_comp + 1);
         component_starts_[0] = 0;
@@ -260,6 +260,7 @@ namespace FlowDiagnostics
             std::copy(tc.vertex, tc.vertex + tc.size, sequence_.begin() + component_starts_[comp]);
             component_starts_[comp + 1] = component_starts_[comp] + tc.size;
         }
+        sequence_.resize(component_starts_.back());
     }
 
 
