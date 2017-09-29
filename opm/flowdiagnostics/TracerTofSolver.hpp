@@ -92,8 +92,9 @@ namespace FlowDiagnostics
         int num_multicell_ = 0;
         int max_size_multicell_ = 0;
         int max_iter_multicell_ = 0;
-        const double gauss_seidel_tol_ = 1e-3;
         const double max_tof_ = 200.0 * 365.0 * 24.0 * 60.0 * 60.0; // 200 years.
+        const double gauss_seidel_tof_tol_ = max_tof_ / 1e12;
+        const double gauss_seidel_tracer_tol_ = 1e-9;
 
         // --------------  Private helper class --------------
 
