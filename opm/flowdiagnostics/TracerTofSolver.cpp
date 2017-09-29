@@ -370,17 +370,23 @@ namespace FlowDiagnostics
         ++num_multicell_;
         max_size_multicell_ = std::max(max_size_multicell_, num_cells);
 
-        // Using a Gauss-Seidel approach.
-        double max_delta = 1e100;
+        // Using a simple Gauss-Seidel approach.
+        double max_tof_delta = 1e100;
+        double max_tracer_delta = 1e100;
         int num_iter = 0;
-        while (max_delta > gauss_seidel_tol_) {
-            max_delta = 0.0;
+        while (max_tof_delta > gauss_seidel_tof_tol_ || max_tracer_delta > gauss_seidel_tracer_tol_) {
+            max_tof_delta = 0.0;
+            max_tracer_delta = 0.0;
             ++num_iter;
             for (int ci = 0; ci < num_cells; ++ci) {
                 const int cell = cells[ci];
                 const double tof_before = tof_[cell];
+                const double tracer_before = tracer_[cell];
                 solveSingleCell(cell);
-                max_delta = std::max(max_delta, std::fabs(tof_[cell] - tof_before));
+                max_tof_delta = std::max(max_tof_delta, std::fabs(tof_[cell] - tof_before));
+                const bool zero_change =  ((tracer_before == 0.0) != (tracer_[cell] == 0.0));
+                const double tracer_change = zero_change ? 1.0 : std::fabs(tracer_[cell] - tracer_before);
+                max_tracer_delta = std::max(max_tracer_delta, tracer_change);
             }
         }
         max_iter_multicell_ = std::max(max_iter_multicell_, num_iter);
