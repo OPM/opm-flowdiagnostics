@@ -56,7 +56,7 @@ public:
 
     void assignPoreVolume(const std::vector<double>& pvol);
     void assignConnectionFlux(const ConnectionValues& flux);
-    void assignInflowFlux(const CellSetValues& inflow_flux);
+    void assignInflowFlux(const std::map<CellSetID, CellSetValues>& inflow_flux);
 
     Forward injDiag (const std::vector<CellSet>& start_sets);
     Reverse prodDiag(const std::vector<CellSet>& start_sets);
@@ -109,15 +109,17 @@ Toolbox::Impl::assignConnectionFlux(const ConnectionValues& flux)
 }
 
 void
-Toolbox::Impl::assignInflowFlux(const CellSetValues& inflow_flux)
+Toolbox::Impl::assignInflowFlux(const std::map<CellSetID, CellSetValues>& inflow_flux)
 {
     only_inflow_flux_.clear();
     only_outflow_flux_.clear();
-    for (const auto& data : inflow_flux) {
-        if (data.second > 0.0) {
-            only_inflow_flux_[data.first] = data.second;
-        } else if (data.second < 0.0) {
-            only_outflow_flux_[data.first] = -data.second;
+    for (const auto& inflow_set : inflow_flux) {
+        for (const auto& data : inflow_set.second) {
+            if (data.second > 0.0) {
+                only_inflow_flux_[data.first] += data.second;
+            } else if (data.second < 0.0) {
+                only_outflow_flux_[data.first] += -data.second;
+            }
         }
     }
 }
@@ -271,7 +273,7 @@ Toolbox::assignConnectionFlux(const ConnectionValues& flux)
 }
 
 void
-Toolbox::assignInflowFlux(const CellSetValues& inflow_flux)
+Toolbox::assignInflowFlux(const std::map<CellSetID, CellSetValues>& inflow_flux)
 {
     pImpl_->assignInflowFlux(inflow_flux);
 }

@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     }
 
     // Create well in/out flows.
-    CellSetValues wellflow = { {0, 0.3}, {4, -0.3} };
+    std::map<CellSetID, CellSetValues> wellflow = { { CellSetID("I-1"), {{0, 0.3}} }, { CellSetID("P-1"), {{4, -0.3}} } };
 
     Toolbox diagTool(graph);
     diagTool.assignPoreVolume(cas.poreVolume());
@@ -426,7 +426,9 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
     flux(C{6}, P{0}) = -0.6;
 
     // Create well in/out flows.
-    CellSetValues wellflow = { {0, 0.3}, {3, 0.3}, {2, -0.6} };
+    std::map<CellSetID, CellSetValues> wellflow = { { CellSetID("I-1"), {{0, 0.3}} },
+                                                    { CellSetID("I-2"), {{3, 0.3}} },
+                                                    { CellSetID("P-1"), {{2, -0.6}} } };
 
     Toolbox diagTool(graph);
     diagTool.assignPoreVolume(cas.poreVolume());
@@ -624,7 +626,9 @@ BOOST_AUTO_TEST_CASE (LocalSolutionsWithMidflowSource)
     flux(C{1}, P{0}) = 0.6;
 
     // Create well in/out flows.
-    CellSetValues wellflow = { {0, 0.3}, {1, 0.3}, {2, -0.6} };
+    std::map<CellSetID, CellSetValues> wellflow = { { CellSetID("I-1"), {{0, 0.3}} },
+                                                    { CellSetID("I-2"), {{1, 0.3}} },
+                                                    { CellSetID("P-1"), {{2, -0.6}} } };
 
     Toolbox diagTool(graph);
     diagTool.assignPoreVolume(cas.poreVolume());
@@ -824,7 +828,9 @@ BOOST_AUTO_TEST_CASE (LocalSolutionsPerfSameCell)
     flux(C{0}, P{0}) = 0.6;
 
     // Create well in/out flows.
-    CellSetValues wellflow = { {0, 0.6}, {1, -0.6} };
+    std::map<CellSetID, CellSetValues> wellflow = { { CellSetID("I-1"), {{0, 0.3}} },
+                                                    { CellSetID("I-2"), {{0, 0.3}} },
+                                                    { CellSetID("P-1"), {{1, -0.6}} } };
 
     Toolbox diagTool(graph);
     diagTool.assignPoreVolume(cas.poreVolume());
