@@ -125,7 +125,7 @@ namespace FlowDiagnostics
 
 
 
-    TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSet& startset)
+    TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSetValues& startset)
     {
         // Reset solver variables and set source terms.
         prepareForSolve();
@@ -174,9 +174,10 @@ namespace FlowDiagnostics
 
 
 
-    void TracerTofSolver::setupStartArray(const CellSet& startset)
+    void TracerTofSolver::setupStartArray(const CellSetValues& startset)
     {
-        for (const int cell : startset) {
+        for (const auto& startpoint : startset) {
+            const int cell = startpoint.first;
             is_start_[cell] = 1;
         }
     }
@@ -231,10 +232,14 @@ namespace FlowDiagnostics
 
 
 
-    void TracerTofSolver::computeLocalOrdering(const CellSet& startset)
+    void TracerTofSolver::computeLocalOrdering(const CellSetValues& startset)
     {
         // Extract start cells.
-        std::vector<int> startcells(startset.begin(), startset.end());
+        std::vector<int> startcells;
+        startcells.reserve(startset.size());
+        for (const auto& startpoint : startset) {
+            startcells.push_back(startpoint.first);
+        }
 
         // Compute reverse topological ordering.
         const size_t num_cells = pv_.size();

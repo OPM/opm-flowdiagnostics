@@ -66,6 +66,8 @@ private:
 
     std::vector<double> pvol_;
     ConnectionValues    flux_;
+    std::map<CellSetID, CellSetValues> inj_flux_by_id_;
+    std::map<CellSetID, CellSetValues> prod_flux_by_id_;
     CellSetValues       only_inflow_flux_;
     CellSetValues       only_outflow_flux_;
 
@@ -114,11 +116,14 @@ Toolbox::Impl::assignInflowFlux(const std::map<CellSetID, CellSetValues>& inflow
     only_inflow_flux_.clear();
     only_outflow_flux_.clear();
     for (const auto& inflow_set : inflow_flux) {
+        const CellSetID& id = inflow_set.first;
         for (const auto& data : inflow_set.second) {
             if (data.second > 0.0) {
                 only_inflow_flux_[data.first] += data.second;
+                inj_flux_by_id_[id].insert(data);
             } else if (data.second < 0.0) {
                 only_outflow_flux_[data.first] += -data.second;
+                prod_flux_by_id_[id].insert(data);
             }
         }
     }
@@ -134,6 +139,9 @@ Toolbox::Impl::injDiag(const std::vector<CellSet>& start_sets)
 
     // Check that start sets are valid.
     for (const auto& start : start_sets) {
+        if (inj_flux_by_id_.find(start.id()) == inj_flux_by_id_.end()) {
+            throw std::runtime_error("Start set ID not present in data passed to assignInflowFlux().");
+        }
         for (const int cell : start) {
             if (only_inflow_flux_.count(cell) != 1 || only_outflow_flux_.count(cell) != 0) {
                 throw std::runtime_error("Start set inconsistent with assignInflowFlux()-given values");
@@ -153,7 +161,7 @@ Toolbox::Impl::injDiag(const std::vector<CellSet>& start_sets)
     sol.assignGlobalToF(solver.solveGlobal());
 
     for (const auto& start : start_sets) {
-        auto solution = solver.solveLocal(start);
+        auto solution = solver.solveLocal(inj_flux_by_id_[start.id()]);
         sol.assign(start.id(), ToF{ solution.tof });
         sol.assign(start.id(), Conc{ solution.concentration });
     }
@@ -171,6 +179,9 @@ Toolbox::Impl::prodDiag(const std::vector<CellSet>& start_sets)
 
     // Check that start sets are valid.
     for (const auto& start : start_sets) {
+        if (prod_flux_by_id_.find(start.id()) == prod_flux_by_id_.end()) {
+            throw std::runtime_error("Start set ID not present in data passed to assignInflowFlux().");
+        }
         for (const int cell : start) {
            if (only_inflow_flux_.count(cell) != 0 || only_outflow_flux_.count(cell) != 1) {
                  throw std::runtime_error("Start set inconsistent with assignInflowFlux()-given values");
@@ -190,7 +201,7 @@ Toolbox::Impl::prodDiag(const std::vector<CellSet>& start_sets)
     sol.assignGlobalToF(solver.solveGlobal());
 
     for (const auto& start : start_sets) {
-        auto solution = solver.solveLocal(start);
+        auto solution = solver.solveLocal(prod_flux_by_id_[start.id()]);
         sol.assign(start.id(), ToF{ solution.tof });
         sol.assign(start.id(), Conc{ solution.concentration });
     }

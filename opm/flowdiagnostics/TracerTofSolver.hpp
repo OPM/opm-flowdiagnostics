@@ -48,7 +48,7 @@ namespace FlowDiagnostics
     {
     public:
         /// Initialize solver with a given flow graph (a weighted,
-        /// directed asyclic graph) containing the out-fluxes from
+        /// directed acyclic graph) containing the out-fluxes from
         /// each cell, the reverse graph (with in-fluxes from each
         /// cell), pore volumes and inflow sources (positive).
         TracerTofSolver(const AssembledConnections& graph,
@@ -71,8 +71,7 @@ namespace FlowDiagnostics
         ///
         /// Local means that only cells downwind from he startset are considered.
         /// The solution is therefore potentially sparse.
-        /// TODO: not implemented!
-        LocalSolution solveLocal(const CellSet& startset);
+        LocalSolution solveLocal(const CellSetValues& startset);
 
     private:
 
@@ -110,13 +109,13 @@ namespace FlowDiagnostics
 
         void prepareForSolve();
 
-        void setupStartArray(const CellSet& startset);
+        void setupStartArray(const CellSetValues& startset);
 
         void setupStartArrayFromSource();
 
         void computeOrdering();
 
-        void computeLocalOrdering(const CellSet& startset);
+        void computeLocalOrdering(const CellSetValues& startset);
 
         void solve();
 
