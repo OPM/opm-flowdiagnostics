@@ -50,7 +50,9 @@ namespace FlowDiagnostics
         /// Initialize solver with a given flow graph (a weighted,
         /// directed acyclic graph) containing the out-fluxes from
         /// each cell, the reverse graph (with in-fluxes from each
-        /// cell), pore volumes and inflow sources (positive).
+        /// cell), pore volumes and all (positive) inflow sources. If
+        /// there are multiple inflow sources for a single cell, they
+        /// should be added before passing to this function.
         TracerTofSolver(const AssembledConnections& graph,
                         const AssembledConnections& reverse_graph,
                         const std::vector<double>& pore_volumes,
@@ -69,8 +71,10 @@ namespace FlowDiagnostics
 
         /// Compute a local solution tracer and time-of-flight solution.
         ///
-        /// Local means that only cells downwind from he startset are considered.
-        /// The solution is therefore potentially sparse.
+        /// Local means that only cells downwind from he startset are
+        /// considered. The solution is therefore potentially sparse.
+        /// The startset must contain the (positive) source term for
+        /// each start cell.
         LocalSolution solveLocal(const CellSetValues& startset);
 
     private:
