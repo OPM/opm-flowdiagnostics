@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
         const int first_cell = 0;
         const int last_cell = cas.connectivity().numCells() - 1;
         auto start = std::vector<CellSet>{ CellSet(CellSetID("I-1"), {first_cell}),
-                                           CellSet(CellSetID("I-2"), {last_cell}) };
+                                           CellSet(CellSetID("P-1"), {last_cell}) };
         BOOST_CHECK_THROW(diagTool.computeInjectionDiagnostics(start), std::runtime_error);
         BOOST_CHECK_THROW(diagTool.computeProductionDiagnostics(start), std::runtime_error);
     }
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE (OneDimCase)
     const int first_cell = 0;
     const int last_cell = cas.connectivity().numCells() - 1;
     auto start_fwd = std::vector<CellSet>{ CellSet(CellSetID("I-1"), {first_cell}) };
-    auto start_rev = std::vector<CellSet>{ CellSet(CellSetID("I-2"), {last_cell}) };
+    auto start_rev = std::vector<CellSet>{ CellSet(CellSetID("P-1"), {last_cell}) };
     const auto fwd = diagTool.computeInjectionDiagnostics(start_fwd);
     const auto rev = diagTool.computeProductionDiagnostics(start_rev);
 
