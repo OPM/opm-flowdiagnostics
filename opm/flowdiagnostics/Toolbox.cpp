@@ -123,7 +123,7 @@ Toolbox::Impl::assignInflowFlux(const std::map<CellSetID, CellSetValues>& inflow
                 inj_flux_by_id_[id].insert(data);
             } else if (data.second < 0.0) {
                 only_outflow_flux_[data.first] += -data.second;
-                prod_flux_by_id_[id].insert(data);
+                prod_flux_by_id_[id].insert(std::make_pair(data.first, -data.second));
             }
         }
     }
