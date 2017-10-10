@@ -100,6 +100,7 @@ namespace FlowDiagnostics
         , influx_(std::move(inout.influx))
         , outflux_(std::move(inout.outflux))
         , source_term_(expandSparse(pore_volumes.size(), source_inflow))
+        , local_source_term_(pore_volumes.size(), 0.0)
     {
     }
 
@@ -112,10 +113,12 @@ namespace FlowDiagnostics
         // Reset solver variables and set source terms.
         prepareForSolve();
         setupStartArrayFromSource();
+        local_source_term_ = source_term_;
 
         // Compute topological ordering and solve.
         computeOrdering();
         solve();
+        std::fill(local_source_term_.begin(), local_source_term_.end(), 0.0);
 
         // Return computed time-of-flight.
         return tof_;
@@ -125,7 +128,7 @@ namespace FlowDiagnostics
 
 
 
-    TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSet& startset)
+    TracerTofSolver::LocalSolution TracerTofSolver::solveLocal(const CellSetValues& startset)
     {
         // Reset solver variables and set source terms.
         prepareForSolve();
@@ -133,7 +136,9 @@ namespace FlowDiagnostics
 
         // Compute local topological ordering and solve.
         computeLocalOrdering(startset);
+        setupLocalSource(startset);
         solve();
+        cleanupLocalSource(startset);
 
         // Return computed time-of-flight.
         CellSetValues local_tof;
@@ -174,9 +179,10 @@ namespace FlowDiagnostics
 
 
 
-    void TracerTofSolver::setupStartArray(const CellSet& startset)
+    void TracerTofSolver::setupStartArray(const CellSetValues& startset)
     {
-        for (const int cell : startset) {
+        for (const auto& startpoint : startset) {
+            const int cell = startpoint.first;
             is_start_[cell] = 1;
         }
     }
@@ -231,10 +237,14 @@ namespace FlowDiagnostics
 
 
 
-    void TracerTofSolver::computeLocalOrdering(const CellSet& startset)
+    void TracerTofSolver::computeLocalOrdering(const CellSetValues& startset)
     {
         // Extract start cells.
-        std::vector<int> startcells(startset.begin(), startset.end());
+        std::vector<int> startcells;
+        startcells.reserve(startset.size());
+        for (const auto& startpoint : startset) {
+            startcells.push_back(startpoint.first);
+        }
 
         // Compute reverse topological ordering.
         const size_t num_cells = pv_.size();
@@ -271,6 +281,31 @@ namespace FlowDiagnostics
 
 
 
+    void TracerTofSolver::setupLocalSource(const CellSetValues& startset)
+    {
+        for (const auto& startpoint : startset) {
+            if (startpoint.second < 0.0) {
+                throw std::logic_error("Start set for local solve has negative source value.");
+            }
+            local_source_term_[startpoint.first] = startpoint.second;
+        }
+    }
+
+
+
+
+
+    void TracerTofSolver::cleanupLocalSource(const CellSetValues& startset)
+    {
+        for (const auto& startpoint : startset) {
+            local_source_term_[startpoint.first] = 0.0;
+        }
+    }
+
+
+
+
+
     void TracerTofSolver::solve()
     {
         // Solve each component.
@@ -297,7 +332,7 @@ namespace FlowDiagnostics
     void TracerTofSolver::solveSingleCell(const int cell)
     {
         // Compute influx (divisor of tof expression).
-        double source = source_term_[cell];  // Initial tof for well cell equal to fill time.
+        double source = source_term_[cell];
         if (source == 0.0 && is_start_[cell]) {
             source = std::numeric_limits<double>::infinity(); // Gives 0 tof in start cell.
         }
@@ -317,11 +352,7 @@ namespace FlowDiagnostics
             // should get a contribution from the local source term
             // (which is then considered to be containing the
             // currently considered tracer).
-            //
-            // Start cells should therefore never have a zero source
-            // term. This may need to change in the future to support
-            // local tracing from arbitrary locations.
-            upwind_tracer_contrib += source;
+            upwind_tracer_contrib += local_source_term_[cell];
         }
 
         // The following should be true if Tarjan was done correctly.
