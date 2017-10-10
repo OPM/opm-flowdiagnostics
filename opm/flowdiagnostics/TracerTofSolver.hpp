@@ -73,7 +73,7 @@ namespace FlowDiagnostics
         ///
         /// Local means that only cells downwind from he startset are
         /// considered. The solution is therefore potentially sparse.
-        /// The startset must contain the (positive) source term for
+        /// The startset must contain the (nonnegative) source term for
         /// each start cell.
         LocalSolution solveLocal(const CellSetValues& startset);
 
@@ -87,6 +87,7 @@ namespace FlowDiagnostics
         const std::vector<double> influx_;
         const std::vector<double> outflux_;
         std::vector<double> source_term_;
+        std::vector<double> local_source_term_;
         std::vector<char> is_start_; // char to avoid the nasty vector<bool> specialization
         std::vector<int> sequence_;
         std::vector<int> component_starts_;
@@ -120,6 +121,10 @@ namespace FlowDiagnostics
         void computeOrdering();
 
         void computeLocalOrdering(const CellSetValues& startset);
+
+        void setupLocalSource(const CellSetValues& startset);
+
+        void cleanupLocalSource(const CellSetValues& startset);
 
         void solve();
 
