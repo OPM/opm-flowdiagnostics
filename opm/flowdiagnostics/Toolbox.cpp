@@ -115,6 +115,8 @@ Toolbox::Impl::assignInflowFlux(const std::map<CellSetID, CellSetValues>& inflow
 {
     only_inflow_flux_.clear();
     only_outflow_flux_.clear();
+    inj_flux_by_id_.clear();
+    prod_flux_by_id_.clear();
     for (const auto& inflow_set : inflow_flux) {
         const CellSetID& id = inflow_set.first;
         for (const auto& data : inflow_set.second) {
