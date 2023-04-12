@@ -458,8 +458,8 @@ BOOST_AUTO_TEST_CASE (LocalSolutions)
     {
         using VCS = std::vector<Opm::FlowDiagnostics::CellSet>;
         using VCSI = std::vector<Opm::FlowDiagnostics::CellSetID>;
-        using P = std::pair<VCS, VCSI>;
-        std::vector<P> pairs { P{ injstart, fwd.fd.startPoints() }, P{ prdstart, rev.fd.startPoints() } };
+        using PA = std::pair<VCS, VCSI>;
+        std::vector<PA> pairs { PA{ injstart, fwd.fd.startPoints() }, PA{ prdstart, rev.fd.startPoints() } };
         for (const auto& p : pairs) {
             const auto& s1 = p.first;
             const auto& s2 = p.second;
@@ -657,8 +657,8 @@ BOOST_AUTO_TEST_CASE (LocalSolutionsWithMidflowSource)
     {
         using VCS = std::vector<Opm::FlowDiagnostics::CellSet>;
         using VCSI = std::vector<Opm::FlowDiagnostics::CellSetID>;
-        using P = std::pair<VCS, VCSI>;
-        std::vector<P> pairs { P{ injstart, fwd.fd.startPoints() }, P{ prdstart, rev.fd.startPoints() } };
+        using PA = std::pair<VCS, VCSI>;
+        std::vector<PA> pairs { PA{ injstart, fwd.fd.startPoints() }, PA{ prdstart, rev.fd.startPoints() } };
         for (const auto& p : pairs) {
             const auto& s1 = p.first;
             const auto& s2 = p.second;
@@ -859,8 +859,8 @@ BOOST_AUTO_TEST_CASE (LocalSolutionsPerfSameCell)
     {
         using VCS = std::vector<Opm::FlowDiagnostics::CellSet>;
         using VCSI = std::vector<Opm::FlowDiagnostics::CellSetID>;
-        using P = std::pair<VCS, VCSI>;
-        std::vector<P> pairs { P{ injstart, fwd.fd.startPoints() }, P{ prdstart, rev.fd.startPoints() } };
+        using PA = std::pair<VCS, VCSI>;
+        std::vector<PA> pairs { PA{ injstart, fwd.fd.startPoints() }, PA{ prdstart, rev.fd.startPoints() } };
         for (const auto& p : pairs) {
             const auto& s1 = p.first;
             const auto& s2 = p.second;
