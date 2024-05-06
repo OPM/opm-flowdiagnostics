@@ -17,8 +17,6 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
-
 #define NVERBOSE
 
 #define BOOST_TEST_MODULE TEST_DERIVEDQUANTITIES
