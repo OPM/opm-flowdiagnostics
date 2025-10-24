@@ -1,91 +1,146 @@
 # -*- mode: cmake; tab-width: 2; indent-tabs-mode: t; truncate-lines: t; compile-command: "cmake -Wdev" -*-
 # vim: set filetype=cmake autoindent tabstop=2 shiftwidth=2 noexpandtab softtabstop=2 nowrap:
 
-###########################################################################
-#                                                                         #
-# Note: The bulk of the build system is located in the cmake/ directory.  #
-#       This file only contains the specializations for this particular   #
-#       project. Most likely you are interested in editing one of these   #
-#       files instead:                                                    #
-#                                                                         #
-#       dune.module                              Name and version number  #
-#       CMakeLists_files.cmake                   Path of source files     #
-#       cmake/Modules/${project}-prereqs.cmake   Dependencies             #
-#                                                                         #
-###########################################################################
+cmake_minimum_required(VERSION 3.27)
 
-# Mandatory call to project
-project(opm-flowdiagnostics C CXX)
+project(opm-flowdiagnostics
+  VERSION   2024.04
+  LANGUAGES C CXX
+)
 
-cmake_minimum_required (VERSION 3.10)
+enable_testing()
 
-# additional search modules
-option(SIBLING_SEARCH "Search for other modules in sibling directories?" ON)
+set(CMAKE_CXX_STANDARD          17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS        OFF)
 
-if(SIBLING_SEARCH AND NOT opm-common_DIR)
-  # guess the sibling dir
-  get_filename_component(_leaf_dir_name ${PROJECT_BINARY_DIR} NAME)
-  get_filename_component(_parent_full_dir ${PROJECT_BINARY_DIR} DIRECTORY)
-  get_filename_component(_parent_dir_name ${_parent_full_dir} NAME)
-  #Try if <module-name>/<build-dir> is used
-  get_filename_component(_modules_dir ${_parent_full_dir} DIRECTORY)
-  if(IS_DIRECTORY ${_modules_dir}/opm-common/${_leaf_dir_name})
-    set(opm-common_DIR ${_modules_dir}/opm-common/${_leaf_dir_name})
-  else()
-    string(REPLACE ${PROJECT_NAME} opm-common _opm_common_leaf ${_leaf_dir_name})
-    if(NOT _leaf_dir_name STREQUAL _opm_common_leaf
-        AND IS_DIRECTORY ${_parent_full_dir}/${_opm_common_leaf})
-      # We are using build directories named <prefix><module-name><postfix>
-      set(opm-common_DIR ${_parent_full_dir}/${_opm_common_leaf})
-    elseif(IS_DIRECTORY ${_parent_full_dir}/opm-common)
-      # All modules are in a common build dir
-      set(opm-common_DIR "${_parent_full_dir}/opm-common}")
-    endif()
-  endif()
-endif()
-if(opm-common_DIR AND NOT IS_DIRECTORY ${opm-common_DIR})
-  message(WARNING "Value ${opm-common_DIR} passed to variable"
-    " opm-common_DIR is not a directory")
-endif()
+set(CMAKE_C_STANDARD          99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS        OFF)
 
-find_package(opm-common REQUIRED)
+set(CMAKE_DEBUG_POSTFIX "-d")
 
-include(OpmInit)
-OpmSetPolicies()
+add_library(OpmFDEngine)
 
-# not the same location as most of the other projects; this hook overrides
-macro (dir_hook)
-endmacro (dir_hook)
+set_target_properties (OpmFDEngine PROPERTIES
+  SOVERSION 1
+  VERSION   2024.04
+)
 
-# list of prerequisites for this particular project; this is in a
-# separate file (in cmake/Modules sub-directory) because it is shared
-# with the find module
-include ( ${project}-prereqs )
+target_sources(OpmFDEngine
+  PRIVATE
+    opm/flowdiagnostics/CellSet.cpp
+    opm/flowdiagnostics/ConnectionValues.cpp
+    opm/flowdiagnostics/ConnectivityGraph.cpp
+    opm/flowdiagnostics/DerivedQuantities.cpp
+    opm/flowdiagnostics/Solution.cpp
+    opm/flowdiagnostics/Toolbox.cpp
+    opm/flowdiagnostics/TracerTofSolver.cpp
+    opm/utility/graph/AssembledConnections.cpp
+    opm/utility/numeric/RandomVector.cpp
+    opm/utility/graph/tarjan.c
 
-# read the list of components from this file (in the project directory);
-# it should set various lists with the names of the files to include
-include (CMakeLists_files.cmake)
+  PUBLIC FILE_SET engine_public_headers
+    TYPE HEADERS
+    FILES
+      opm/flowdiagnostics/CellSet.hpp
+      opm/flowdiagnostics/CellSetValues.hpp
+      opm/flowdiagnostics/ConnectionValues.hpp
+      opm/flowdiagnostics/ConnectivityGraph.hpp
+      opm/flowdiagnostics/DerivedQuantities.hpp
+      opm/flowdiagnostics/Solution.hpp
+      opm/flowdiagnostics/Toolbox.hpp
+      opm/flowdiagnostics/TracerTofSolver.hpp
+      opm/utility/graph/AssembledConnectionsIteration.hpp
+      opm/utility/graph/AssembledConnections.hpp
+      opm/utility/numeric/RandomVector.hpp
 
-macro (config_hook)
-endmacro (config_hook)
+  PRIVATE FILE_SET engine_internal_headers
+    TYPE HEADERS
+    FILES
+      opm/utility/graph/tarjan.h
+)
 
-macro (prereqs_hook)
-endmacro (prereqs_hook)
+target_include_directories(OpmFDEngine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-macro (sources_hook)
-endmacro (sources_hook)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
-macro (fortran_hook)
-endmacro (fortran_hook)
+write_basic_package_version_file(OpmFDEngineConfigVersion.cmake
+  VERSION ${OpmFDEngine_VERSION}
+  COMPATIBILITY ExactVersion
+)
 
-macro (files_hook)
-endmacro (files_hook)
+install(TARGETS OpmFDEngine EXPORT OpmFDEngineTargets
+  RUNTIME           # Following options apply to runtime artifacts.
+    COMPONENT OpmFDEngine_Runtime
+  LIBRARY           # Following options apply to library artifacts.
+    COMPONENT OpmFDEngine_Runtime
+    NAMELINK_COMPONENT OpmFDEngine_Development
+  ARCHIVE           # Following options apply to archive artifacts.
+    COMPONENT OpmFDEngine_Development
+  FILE_SET engine_public_headers # Following options apply to file set HEADERS.
+    COMPONENT OpmFDEngine_Development
+)
 
-macro (tests_hook)
-endmacro (tests_hook)
+install(EXPORT OpmFDEngineTargets
+  FILE OpmFDEngineTargets.cmake
+  NAMESPACE OpmFDEngine::
+  DESTINATION share/cmake/OpmFDEngine
+)
 
-macro (install_hook)
-endmacro (install_hook)
+install(FILES
+    "OpmFDEngineConfig.cmake"
+    "${CMAKE_BINARY_DIR}/OpmFDEngineConfigVersion.cmake"
+  DESTINATION
+    share/cmake/OpmFDEngine
+)
 
-# all setup common to the OPM library modules is done here
-include (OpmLibMain)
+find_package(Boost
+  1.44
+  REQUIRED
+  COMPONENTS "unit_test_framework"
+)
+
+add_executable(test_assembledconnections tests/test_assembledconnections.cpp)
+target_link_libraries(test_assembledconnections
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_executable(test_cellset tests/test_cellset.cpp)
+target_link_libraries(test_cellset
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_executable(test_connectionvalues tests/test_connectionvalues.cpp)
+target_link_libraries(test_connectionvalues
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_executable(test_connectivitygraph tests/test_connectivitygraph.cpp)
+target_link_libraries(test_connectivitygraph
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_executable(test_derivedquantities tests/test_derivedquantities.cpp)
+target_link_libraries(test_derivedquantities
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_executable(test_flowdiagnosticstool tests/test_flowdiagnosticstool.cpp)
+target_link_libraries(test_flowdiagnosticstool
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_executable(test_tarjan tests/test_tarjan.cpp)
+target_link_libraries(test_tarjan
+  PRIVATE OpmFDEngine Boost::unit_test_framework
+  )
+
+add_test(AssembledConnections test_assembledconnections)
+add_test(CellSet test_cellset)
+add_test(ConnectionValues test_connectionvalues)
+add_test(ConnectivityGraph test_connectivitygraph)
+add_test(DerivedQuantities test_derivedquantities)
+add_test(FlowDiagnsticsTool test_flowdiagnosticstool)
+add_test(Tarjan test_tarjan)

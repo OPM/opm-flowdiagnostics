@@ -18,15 +18,11 @@
   along with OPM.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <config.h>
-
 #define NVERBOSE
 
 #define BOOST_TEST_MODULE TarjanImplementationTest
 
-#include <opm/common/utility/platform_dependent/disable_warnings.h>
 #include <boost/test/unit_test.hpp>
-#include <opm/common/utility/platform_dependent/reenable_warnings.h>
 
 #include <opm/utility/graph/tarjan.h>
 
